@@ -80,5 +80,15 @@ public class Main {
         System.out.println(permanentRole.summary());
         permanentRole.revoke();
         System.out.println(permanentRole.summary());
+
+        System.out.println();
+
+        TemporaryAssignment temporaryRole = new TemporaryAssignment(user1, admin, metadata,
+                "2026-02-15 17:50:00 +07:00", true);
+        temporaryRole.extend("2026-02-15 21:00:00 +09:00");
+        System.out.println(temporaryRole.summary());
+        System.out.println("Is active: " + temporaryRole.isActive());
+        System.out.println("Is expired: " + temporaryRole.isExpired());
+        System.out.println("Time remaining: " + temporaryRole.getTimeRemaining());
     }
 }
