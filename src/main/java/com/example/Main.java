@@ -43,5 +43,11 @@ public class Main {
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
         }
+
+        System.out.println();
+
+        Permission permission = new Permission(" Read", "Users ", " Can view user list");
+        System.out.println(permission.format());
+        System.out.println(permission.matches("RE.*", "us.*"));
     }
 }
