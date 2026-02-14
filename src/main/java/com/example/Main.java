@@ -1,5 +1,7 @@
 package com.example;
 
+import java.util.Set;
+
 public class Main {
     public static void main(String[] args) {
         User user1 = User.validate("  akdante", "Akusko Danil Dmitrievich", "akusko.dan@yandex.ru");
@@ -49,5 +51,22 @@ public class Main {
         Permission permission = new Permission(" Read", "Users ", " Can view user list");
         System.out.println(permission.format());
         System.out.println(permission.matches("RE.*", "us.*"));
+
+        System.out.println();
+
+        Set<Permission> permissions = Set.of(
+                permission,
+                new Permission("Write", "Users", "Can add user to list"),
+                new Permission("Delete", "Users", "Can delete user from list")
+        );
+
+        Role admin = new Role(" Administrator", "Full access ", permissions);
+        System.out.println(admin);
+        System.out.println(admin.hasPermission("READ", "us.*"));
+        try {
+            new Role("Administrator", "Full access", permissions);
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
