@@ -68,5 +68,10 @@ public class Main {
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
         }
+
+        System.out.println();
+
+        AssignmentMetadata metadata = AssignmentMetadata.now(" Ivanov Ivan", "I don't know ");
+        System.out.println(metadata.format());
     }
 }
