@@ -73,5 +73,12 @@ public class Main {
 
         AssignmentMetadata metadata = AssignmentMetadata.now(" Ivanov Ivan", "I don't know ");
         System.out.println(metadata.format());
+
+        System.out.println();
+
+        PermanentAssignment permanentRole = new PermanentAssignment(user1, admin, metadata);
+        System.out.println(permanentRole.summary());
+        permanentRole.revoke();
+        System.out.println(permanentRole.summary());
     }
 }
