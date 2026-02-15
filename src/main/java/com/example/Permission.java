@@ -20,10 +20,13 @@ public record Permission(String name, String resource, String description) {
     }
 
     public boolean matches(String namePattern, String resourcePattern) {
-        String np = (namePattern == null || namePattern.isBlank()) ? ".*" : namePattern;
-        String rp = (resourcePattern == null || resourcePattern.isBlank()) ? ".*" : resourcePattern;
+        namePattern = namePattern != null ? namePattern.toUpperCase() : null;
+        resourcePattern = resourcePattern != null ? resourcePattern.toLowerCase() : null;
 
-        return name.matches(np) && resource.matches(rp);
+        boolean np = namePattern == null || name.contains(namePattern) || name.matches(namePattern);
+        boolean rp = resourcePattern == null || resource.contains(resourcePattern) || resource.matches(resourcePattern);
+
+        return np && rp;
     }
 
     private void validateName(String name) {

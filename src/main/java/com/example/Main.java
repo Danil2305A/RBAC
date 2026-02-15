@@ -50,7 +50,7 @@ public class Main {
 
         Permission permission = new Permission(" Read", "Users ", " Can view user list");
         System.out.println(permission.format());
-        System.out.println(permission.matches("RE.*", "us.*"));
+        System.out.println(permission.matches("re", "us"));
 
         System.out.println();
 
@@ -62,7 +62,7 @@ public class Main {
 
         Role admin = new Role(" Administrator", "Full access ", permissions);
         System.out.println(admin);
-        System.out.println(admin.hasPermission("READ", "us.*"));
+        System.out.println(admin.hasPermission("re", "us"));
         try {
             new Role("Administrator", "Full access", permissions);
         } catch (IllegalArgumentException e) {
