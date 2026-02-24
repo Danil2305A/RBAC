@@ -1,6 +1,6 @@
 package com.example.sorter;
 
-import com.example.RoleAssignment;
+import com.example.model.RoleAssignment;
 
 import java.util.Comparator;
 

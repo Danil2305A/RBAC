@@ -1,6 +1,6 @@
 package com.example.manager;
 
-import com.example.User;
+import com.example.model.User;
 import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
 

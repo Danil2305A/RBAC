@@ -1,10 +1,8 @@
 package com.example.manager;
 
-import com.example.*;
 import com.example.filter.AssignmentFilter;
 import com.example.filter.AssignmentFilters;
-import com.example.filter.RoleFilter;
-import com.example.filter.RoleFilters;
+import com.example.model.*;
 
 import java.util.*;
 import java.util.stream.Collectors;

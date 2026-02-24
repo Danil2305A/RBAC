@@ -1,6 +1,6 @@
 package com.example.filter;
 
-import com.example.User;
+import com.example.model.User;
 
 @FunctionalInterface
 public interface UserFilter {

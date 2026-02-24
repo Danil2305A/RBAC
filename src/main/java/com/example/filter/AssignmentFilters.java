@@ -1,9 +1,9 @@
 package com.example.filter;
 
-import com.example.Role;
-import com.example.RoleAssignment;
-import com.example.TemporaryAssignment;
-import com.example.User;
+import com.example.model.Role;
+import com.example.model.RoleAssignment;
+import com.example.model.TemporaryAssignment;
+import com.example.model.User;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;

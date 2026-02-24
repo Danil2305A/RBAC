@@ -1,8 +1,8 @@
-package com.example;
+package com.example.manager;
 
 import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
-import com.example.manager.UserManager;
+import com.example.model.User;
 import com.example.sorter.UserSorters;
 import org.junit.jupiter.api.*;
 

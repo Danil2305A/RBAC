@@ -1,8 +1,8 @@
 package com.example.manager;
 
-import com.example.Permission;
-import com.example.Role;
-import com.example.RoleAssignment;
+import com.example.model.Permission;
+import com.example.model.Role;
+import com.example.model.RoleAssignment;
 import com.example.filter.RoleFilter;
 import com.example.filter.RoleFilters;
 
