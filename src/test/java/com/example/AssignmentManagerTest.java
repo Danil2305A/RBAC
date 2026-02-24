@@ -29,7 +29,7 @@ public class AssignmentManagerTest {
     @DisplayName("Успешное добавление нового назначения роли")
     public void addNewAssignment() {
         User user = User.validate("akuskodan", "Akusko Danil Dmitrievich", "akusko@gmail.com");
-        Role role = new Role("admin", "Admin role", Collections.emptySet());
+        Role role = new Role("adminKAA", "Admin role", Collections.emptySet());
         RoleAssignment assignment = new PermanentAssignment(user, role, AssignmentMetadata.now("Ivan", null));
 
         userManager.add(user);
@@ -136,7 +136,7 @@ public class AssignmentManagerTest {
     public void findAllAssignments() {
         User user = User.validate("akuskodan", "Akusko Danil Dmitrievich", "akusko@gmail.com");
         Role role1 = new Role("admin13", "Admin role", Collections.emptySet());
-        Role role2 = new Role("manager", "Manager role", Collections.emptySet());
+        Role role2 = new Role("managerMain", "Manager role", Collections.emptySet());
         RoleAssignment assignment1 = new PermanentAssignment(user, role1, AssignmentMetadata.now("Ivan", null));
         RoleAssignment assignment2 = new PermanentAssignment(user, role2, AssignmentMetadata.now("Ivan", null));
 

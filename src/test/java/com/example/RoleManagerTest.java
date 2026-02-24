@@ -143,7 +143,7 @@ public class RoleManagerTest {
     @Test
     @DisplayName("Успешный поиск ролей по фильтру")
     public void findRolesWithFilter() {
-        Role role1 = new Role("admin11", "Administrator role", new HashSet<>());
+        Role role1 = new Role("admin19", "Administrator role", new HashSet<>());
         Role role2 = new Role("viewer", "Regular user role", new HashSet<>());
         Role role3 = new Role("manager11", "Manager role", new HashSet<>());
         Role role4 = new Role("superadmin", "Super administrator role", new HashSet<>());
@@ -173,8 +173,8 @@ public class RoleManagerTest {
     @Test
     @DisplayName("Успешный поиск ролей по фильтру и с учётом порядка")
     public void findRolesWithFilterAndSorter() {
-        Role role1 = new Role("admin12", "Administrator role", new HashSet<>());
-        Role role2 = new Role("viewer2", "Regular user role", new HashSet<>());
+        Role role1 = new Role("admin132", "Administrator role", new HashSet<>());
+        Role role2 = new Role("viewer22", "Regular user role", new HashSet<>());
         Role role3 = new Role("manager12", "Manager role", new HashSet<>());
         Role role4 = new Role("aasuperadmin2", "Super administrator role", new HashSet<>());
 
