@@ -1,8 +1,10 @@
-package com.example.manager;
+package com.example;
 
-import com.example.*;
 import com.example.filter.AssignmentFilter;
 import com.example.filter.AssignmentFilters;
+import com.example.manager.AssignmentManager;
+import com.example.manager.RoleManager;
+import com.example.manager.UserManager;
 import com.example.sorter.AssignmentSorters;
 import org.junit.jupiter.api.*;
 
