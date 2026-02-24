@@ -15,7 +15,7 @@ public class UserFilters {
     }
 
     public static UserFilter byEmailDomain(String domain) {
-        return user -> user.email().endsWith(domain);
+        return user -> user.email().substring(user.email().indexOf('@')).equals(domain);
     }
 
     public static UserFilter byFullNameContains(String substring) {

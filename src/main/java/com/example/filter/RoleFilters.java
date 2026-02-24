@@ -1,6 +1,6 @@
 package com.example.filter;
 
-import com.example.Permission;
+import com.example.model.Permission;
 
 public class RoleFilters {
     public static RoleFilter byName(String name) {

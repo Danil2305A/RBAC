@@ -1,4 +1,4 @@
-package com.example;
+package com.example.model;
 
 public interface RoleAssignment {
     String assignmentId();

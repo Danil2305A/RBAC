@@ -1,6 +1,6 @@
 package com.example.sorter;
 
-import com.example.User;
+import com.example.model.User;
 
 import java.util.Comparator;
 

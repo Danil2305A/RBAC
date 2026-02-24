@@ -1,4 +1,4 @@
-package com.example;
+package com.example.model;
 
 public class PermanentAssignment extends AbstractRoleAssignment {
     private boolean revoked;

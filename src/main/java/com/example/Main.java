@@ -1,5 +1,7 @@
 package com.example;
 
+import com.example.model.*;
+
 import java.util.Set;
 
 public class Main {
