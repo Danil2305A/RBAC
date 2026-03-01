@@ -5,8 +5,8 @@ import com.example.manager.RoleManager;
 import com.example.manager.UserManager;
 import com.example.model.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class RBACSystem {
     private UserManager userManager;
@@ -79,9 +79,36 @@ public class RBACSystem {
     }
 
     public String generateStatistics() {
-        return String.format(
-                "Count of users: %d\nCount of roles: %d\nCount of assignments: %d",
-                userManager.count(), roleManager.count(), assignmentManager.count()
-        );
+        int usersCount = userManager.count();
+        int rolesCount = roleManager.count();
+        int totalAssignmentsCount = assignmentManager.count();
+        int activeAssignmentsCount = assignmentManager.getActiveAssignments().size();
+        int expiredAssignmentsCount = assignmentManager.getExpiredAssignments().size();
+        int averageRolesCountPerUser = rolesCount / usersCount;
+
+        Map<Role, Long> roleCount =  assignmentManager.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        RoleAssignment::role,
+                        Collectors.counting()
+                ));
+
+        String popularRoles = roleCount.entrySet().stream()
+                .sorted(Map.Entry.<Role, Long>comparingByValue().reversed())
+                .limit(3)
+                .map(entry -> String.format("%s: %d assignment(s)",
+                        entry.getKey().getName(), entry.getValue()))
+                .collect(Collectors.joining("\n"));
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(String.format("Count of users: %d\n", usersCount));
+        sb.append(String.format("Count of roles: %d\n", rolesCount));
+        sb.append(String.format("Total count of assignments: %d\n", totalAssignmentsCount));
+        sb.append(String.format("Count of active assignments: %d\n", activeAssignmentsCount));
+        sb.append(String.format("Count of expired assignments: %d\n", expiredAssignmentsCount));
+        sb.append(String.format("Average count of roles per user: %d\n", averageRolesCountPerUser));
+        sb.append(String.format("Top 3 most popular roles:\n%s", popularRoles));
+
+        return sb.toString();
     }
 }
