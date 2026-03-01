@@ -1,5 +1,6 @@
 package com.example.manager;
 
+import com.example.exception.DuplicatedResourceException;
 import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
 import com.example.model.User;
@@ -29,7 +30,7 @@ public class UserManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление существующего пользователя c тем же username - список не должен измениться")
+    @DisplayName("Добавление существующего пользователя c тем же username - должно выброситься исключение")
     public void addExistingUser() {
         User user = User.validate("AkuskoDan",
                 "Akusko Danil Dmitrievich",
@@ -40,7 +41,7 @@ public class UserManagerTest {
                 "akuskodan@yandex.ru");
 
         userManager.add(user);
-        userManager.add(existingUser);
+        Assertions.assertThrows(DuplicatedResourceException.class, () -> userManager.add(existingUser));
 
         Assertions.assertTrue(userManager.findAll().contains(user));
         Assertions.assertFalse(userManager.findAll().contains(existingUser));
