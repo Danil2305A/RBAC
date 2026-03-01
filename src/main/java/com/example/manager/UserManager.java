@@ -1,5 +1,6 @@
 package com.example.manager;
 
+import com.example.exception.DuplicatedResourceException;
 import com.example.model.User;
 import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
@@ -11,9 +12,10 @@ public class UserManager implements Repository<User> {
 
     @Override
     public void add(User user) {
-        if (user != null && !users.containsKey(user.username())) {
-            users.put(user.username(), user);
+        if (users.containsKey(user.username())) {
+            throw new DuplicatedResourceException("User", "username", user.username());
         }
+        users.put(user.username(), user);
     }
 
     @Override
