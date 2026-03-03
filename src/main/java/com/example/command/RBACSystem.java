@@ -84,7 +84,11 @@ public class RBACSystem {
         int totalAssignmentsCount = assignmentManager.count();
         int activeAssignmentsCount = assignmentManager.getActiveAssignments().size();
         int expiredAssignmentsCount = assignmentManager.getExpiredAssignments().size();
-        int averageRolesCountPerUser = rolesCount / usersCount;
+
+        int averageRolesCountPerUser = 0;
+        if (usersCount != 0) {
+            averageRolesCountPerUser = rolesCount / usersCount;
+        }
 
         Map<Role, Long> roleCount =  assignmentManager.findAll().stream()
                 .collect(Collectors.groupingBy(
@@ -107,7 +111,7 @@ public class RBACSystem {
         sb.append(String.format("Count of active assignments: %d\n", activeAssignmentsCount));
         sb.append(String.format("Count of expired assignments: %d\n", expiredAssignmentsCount));
         sb.append(String.format("Average count of roles per user: %d\n", averageRolesCountPerUser));
-        sb.append(String.format("Top 3 most popular roles:\n%s", popularRoles));
+        sb.append(String.format("Top 3 most popular roles:\n%s", popularRoles.isEmpty() ? "missing" : popularRoles));
 
         return sb.toString();
     }
