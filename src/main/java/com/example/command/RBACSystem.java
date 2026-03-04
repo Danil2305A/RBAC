@@ -76,6 +76,8 @@ public class RBACSystem {
                 adminRole, AssignmentMetadata.now("System", "Administrator initialization"));
 
         assignmentManager.add(adminRoleAssignment);
+
+        setCurrentUser(admin.username());
     }
 
     public String generateStatistics() {
