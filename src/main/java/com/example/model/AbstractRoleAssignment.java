@@ -84,7 +84,8 @@ public abstract class AbstractRoleAssignment implements RoleAssignment {
     }
 
     public String summary() {
-        return String.format("[%s] %s assigned to %s by %s at %s\n",
+        return String.format("Assignment ID: %s\n", assignmentId) +
+                String.format("[%s] %s assigned to %s by %s at %s\n",
                 assignmentType(), role.getName(), user.username(),
                 metadata.assignedBy(), metadata.assignedAt()) +
                 String.format("Reason: %s\n", metadata.reason()) +
