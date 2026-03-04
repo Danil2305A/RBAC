@@ -393,7 +393,7 @@ public class AssignmentManagerTest {
         TemporaryAssignment assignment = new TemporaryAssignment(user,
                 role,
                 AssignmentMetadata.now("Ivan", null),
-                "2026-02-24 15:00:00 +07:00", false);
+                "2030-02-24 15:00:00 +07:00", false);
 
         userManager.add(user);
         roleManager.add(role);
@@ -401,7 +401,7 @@ public class AssignmentManagerTest {
 
         assignmentManager.revokeAssignment(assignment.assignmentId());
 
-        Assertions.assertFalse(assignmentManager.findAll().contains(assignment));
+        Assertions.assertEquals(1, assignmentManager.getExpiredAssignments().size());
     }
 
     @Test
