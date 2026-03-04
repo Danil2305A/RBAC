@@ -24,7 +24,14 @@ public class CommandRegistry {
                         System.out.println("Missing users");
                         return;
                     }
-                    users.forEach(user -> System.out.println(user.format()));
+                    System.out.println("-".repeat(170));
+                    System.out.printf("| %-20s | %-70s | %-70s |\n", "Username", "Full name", "Email");
+                    System.out.println("-".repeat(170));
+                    users.forEach(user -> {
+                        System.out.printf("| %-20s | %-70s | %-70s |\n",
+                                user.username(), user.fullName(), user.email());
+                        System.out.println("-".repeat(170));
+                    });
                 });
 
         parser.registerCommand("user-create", "Create new user",
