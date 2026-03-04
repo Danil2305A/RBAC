@@ -33,6 +33,10 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         }
     }
 
+    public void revoke() {
+        expiresAt = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX"));
+    }
+
     public String getExpiresAt() {
         return expiresAt;
     }
