@@ -28,7 +28,7 @@ public class CommandParser {
         String[] tokens = input.split("\\s+");
         String commandName = tokens[0];
 
-        commands.get(commandName).execute(scanner, system);
+        executeCommand(commandName, scanner, system);
     }
 
     public void printHelp() {
