@@ -3,10 +3,10 @@ package com.example.model;
 import java.util.*;
 
 public class Role {
-    private final String id;
-    private final String name;
-    private final String description;
-    private final Set<Permission> permissions;
+    private String id;
+    private String name;
+    private String description;
+    private Set<Permission> permissions;
 
     private static final Set<String> usedNames = new HashSet<>();
 
@@ -61,6 +61,24 @@ public class Role {
 
     public Set<Permission> getPermissions() {
         return Collections.unmodifiableSet(permissions);
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        validateName(name);
+        usedNames.remove(this.name);
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setPermissions(Set<Permission> permissions) {
+        this.permissions = permissions;
     }
 
     public void addPermission(Permission permission) {

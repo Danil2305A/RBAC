@@ -1,8 +1,20 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.Objects;
 import java.util.UUID;
 
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "assignmentType"
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = PermanentAssignment.class, name = "PERMANENT"),
+        @JsonSubTypes.Type(value = TemporaryAssignment.class, name = "TEMPORARY")
+})
 public abstract class AbstractRoleAssignment implements RoleAssignment {
     private final String assignmentId;
     private final User user;
@@ -18,6 +30,31 @@ public abstract class AbstractRoleAssignment implements RoleAssignment {
         this.user = user;
         this.role = role;
         this.metadata = metadata;
+    }
+
+    // Пустой конструктор для Jackson
+    protected AbstractRoleAssignment() {
+        this.assignmentId = null;
+        this.user = null;
+        this.role = null;
+        this.metadata = null;
+    }
+
+    // Геттеры (нужны для сериализации)
+    public String getAssignmentId() {
+        return assignmentId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public AssignmentMetadata getMetadata() {
+        return metadata;
     }
 
     private void validateUser(User user) {
@@ -84,9 +121,10 @@ public abstract class AbstractRoleAssignment implements RoleAssignment {
     }
 
     public String summary() {
-        return String.format("[%s] %s assigned to %s by %s at %s\n",
-                assignmentType(), role.getName(), user.username(),
-                metadata.assignedBy(), metadata.assignedAt()) +
+        return String.format("Assignment ID: %s\n", assignmentId) +
+                String.format("[%s] %s assigned to %s by %s at %s\n",
+                        assignmentType(), role.getName(), user.username(),
+                        metadata.assignedBy(), metadata.assignedAt()) +
                 String.format("Reason: %s\n", metadata.reason()) +
                 String.format("Status: %s", isActive() ? "ACTIVE" : "NOT ACTIVE");
     }

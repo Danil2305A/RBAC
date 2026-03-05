@@ -167,7 +167,7 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         if (assignment instanceof PermanentAssignment) {
             ((PermanentAssignment) assignment).revoke();
         } else if (assignment instanceof TemporaryAssignment) {
-            remove(assignment);
+            ((TemporaryAssignment) assignment).revoke();
         }
     }
 

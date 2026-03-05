@@ -8,6 +8,11 @@ public class PermanentAssignment extends AbstractRoleAssignment {
         revoked = false;
     }
 
+    // Пустой конструктор для Jackson
+    protected PermanentAssignment() {
+        super();
+    }
+
     @Override
     public boolean isActive() {
         return !revoked;

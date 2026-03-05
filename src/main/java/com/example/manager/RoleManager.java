@@ -90,6 +90,21 @@ public class RoleManager implements Repository<Role> {
         return name != null && rolesWithNameKey.containsKey(name.trim());
     }
 
+    public void update(String roleName, String newRoleName, String newDescription) {
+        if (!exists(roleName)) {
+            throw new IllegalArgumentException("role with name '" + roleName + "' not found");
+        }
+
+        Role updatingRole = rolesWithNameKey.get(roleName);
+
+        updatingRole.setName(newRoleName);
+        updatingRole.setDescription(newDescription);
+
+        rolesWithNameKey.remove(roleName);
+
+        add(updatingRole);
+    }
+
     public void addPermissionToRole(String roleName, Permission permission) {
         if (!exists(roleName)) {
             throw new IllegalArgumentException("role with name '" + roleName + "' not found");
