@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException;
 
 public class TemporaryAssignment extends AbstractRoleAssignment {
     private String expiresAt;
-    private final boolean autoRenew;
+    private boolean autoRenew;
 
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX");
@@ -19,6 +19,10 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         validateExpirationDate(expiresAt);
         this.expiresAt = expiresAt;
         this.autoRenew = autoRenew;
+    }
+
+    protected TemporaryAssignment() {
+        super();
     }
 
     private void validateExpirationDate(String expirationDate) {
@@ -39,6 +43,18 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
 
     public String getExpiresAt() {
         return expiresAt;
+    }
+
+    public boolean getAutoRenew() {
+        return autoRenew;
+    }
+
+    public void setExpiresAt(String expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public void setAutoRenew(boolean autoRenew) {
+        this.autoRenew = autoRenew;
     }
 
     public boolean isAutoRenew() {
