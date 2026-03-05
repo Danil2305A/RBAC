@@ -834,8 +834,15 @@ public class CommandRegistry {
         parser.registerCommand("exit", "Exiting the program",
                 (scanner, system) -> {
                     System.out.print("Confirm exiting the program? (y/n): ");
-                    String answer = scanner.nextLine().toLowerCase();
-                    if (answer.equals("y")) {
+                    String answer1 = scanner.nextLine().toLowerCase();
+                    if (answer1.equals("y")) {
+                        System.out.print("Save data? (y/n): ");
+                        String answer2 = scanner.nextLine().toLowerCase();
+
+                        if (answer2.equals("y")) {
+                            parser.executeCommand("save", scanner, system);
+                        }
+
                         scanner.close();
                         System.exit(0);
                     }
