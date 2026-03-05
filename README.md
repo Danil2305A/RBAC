@@ -5,7 +5,7 @@
 ## Инструкция по запуску утилиты
 ### Соберите проект
 ```bash
-./gradlew build
+./gradlew shadowJar
 ```
 ### Запустите JAR-файл
 ```bash
