@@ -30,11 +30,26 @@ jobs:
       - name: Build with Gradle Wrapper
         run: ./gradlew shadowJar --no-daemon
 
-      - name: Upload test reports
+      - name: Run tests in package com.example.manager
+        run: ./gradlew test --tests com.example.manager.*
+
+      - name: Upload test reports (package com.example.manager)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports-${{ github.run_id }}
+          name: test-manager-reports-${{ github.run_id }}
           path: |
               **/build/reports/tests/
+          retention-days: 30
+
+      - name: Run tests in package com.example.command
+        run: ./gradlew test --tests com.example.command.*
+
+      - name: Upload test reports (package com.example.command)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-command-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/tests/
           retention-days: 30
