@@ -44,6 +44,8 @@ public class RoleManager implements Repository<Role> {
             return false;
         }
 
+        role.getUsedNames().remove(role.getName());
+
         return rolesWithIdKey.remove(role.getId(), role) &&
                 rolesWithNameKey.remove(role.getName(), role);
     }

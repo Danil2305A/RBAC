@@ -24,6 +24,10 @@ public class Role {
         this.permissions = permissions;
     }
 
+    public Set<String> getUsedNames() {
+        return usedNames;
+    }
+
     private void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("role name must not be null or blank");
