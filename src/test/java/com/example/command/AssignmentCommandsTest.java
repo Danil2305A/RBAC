@@ -1,5 +1,6 @@
 package com.example.command;
 
+import com.example.auditlog.AuditLog;
 import com.example.manager.UserManager;
 import com.example.manager.RoleManager;
 import com.example.manager.AssignmentManager;
@@ -56,6 +57,7 @@ class AssignmentCommandsTest {
         setField(system, "roleManager", roleManager);
         setField(system, "assignmentManager", assignmentManager);
         system.setCurrentUser("testadmin");
+        system.setLogger(new AuditLog());
 
         parser = new CommandParser();
         CommandRegistry.registerAllCommands(parser);

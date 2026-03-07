@@ -1,5 +1,6 @@
 package com.example.command;
 
+import com.example.auditlog.AuditLog;
 import com.example.manager.UserManager;
 import com.example.manager.RoleManager;
 import com.example.manager.AssignmentManager;
@@ -40,6 +41,7 @@ class RoleCommandsTest {
     @BeforeEach
     void setUp() {
         system = new RBACSystem();
+        system.setLogger(new AuditLog());
         setField(system, "userManager", userManager);
         setField(system, "roleManager", roleManager);
         setField(system, "assignmentManager", assignmentManager);
@@ -367,10 +369,10 @@ class RoleCommandsTest {
         @Test
         @DisplayName("Удаление права из роли")
         void shouldRemovePermissionFromRole() {
-            String roleName = "Admin";
+            String roleName = "testRole";
             Permission perm1 = new Permission("READ", "users", "Can read users");
             Permission perm2 = new Permission("WRITE", "users", "Can write users");
-            Role role = createTestRole(roleName, "Admin role", Set.of(perm1, perm2));
+            Role role = createTestRole(roleName, "Test role", Set.of(perm1, perm2));
 
             lenient().when(scanner.nextLine())
                     .thenReturn(roleName)
