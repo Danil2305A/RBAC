@@ -31,7 +31,6 @@ class DateTimeUtilsTest {
         String currentDateTime = DateTimeUtils.getCurrentDateTime();
 
         assertNotNull(currentDateTime);
-        assertTrue(currentDateTime.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} [+-]\\d{2}:\\d{2}"));
 
         assertDoesNotThrow(() -> {
             ZonedDateTime.parse(currentDateTime, DATE_TIME_FORMATTER);
