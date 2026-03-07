@@ -1,14 +1,16 @@
 package com.example.model;
 
+import static com.example.util.ValidationUtils.*;
+
 public record Permission(String name, String resource, String description) {
     public Permission(String name, String resource, String description) {
-        name = name != null ? name.trim() : null;
-        resource = resource != null ? resource.trim() : null;
-        description = description != null ? description.trim() : null;
+        name = normalizeString(name);
+        resource = normalizeString(resource);
+        description = normalizeString(description);
 
-        validateName(name);
-        validateResource(resource);
-        validateDescription(description);
+        validatePermissionName(name);
+        validatePermissionResource(resource);
+        validatePermissionDescription(description);
 
         this.name = name.toUpperCase();
         this.resource = resource.toLowerCase();
@@ -27,27 +29,5 @@ public record Permission(String name, String resource, String description) {
         boolean rp = resourcePattern == null || resource.contains(resourcePattern) || resource.matches(resourcePattern);
 
         return np && rp;
-    }
-
-    private void validateName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("permission name must not be null or blank");
-        }
-
-        if (name.contains(" ")) {
-            throw new IllegalArgumentException("permission name must not contain spaces");
-        }
-    }
-
-    private void validateResource(String resource) {
-        if (resource == null || resource.isBlank()) {
-            throw new IllegalArgumentException("permission resource must not be null or blank");
-        }
-    }
-
-    private void validateDescription(String description) {
-        if (description == null || description.isBlank()) {
-            throw new IllegalArgumentException("permission description must not be null or blank");
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.manager;
 
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Permission;
 import com.example.model.Role;
 import com.example.model.RoleAssignment;
@@ -94,7 +95,7 @@ public class RoleManager implements Repository<Role> {
 
     public void update(String roleName, String newRoleName, String newDescription) {
         if (!exists(roleName)) {
-            throw new IllegalArgumentException("role with name '" + roleName + "' not found");
+            throw new ResourceNotFoundException("role", "name", roleName);
         }
 
         Role updatingRole = rolesWithNameKey.get(roleName);
@@ -109,7 +110,7 @@ public class RoleManager implements Repository<Role> {
 
     public void addPermissionToRole(String roleName, Permission permission) {
         if (!exists(roleName)) {
-            throw new IllegalArgumentException("role with name '" + roleName + "' not found");
+            throw new ResourceNotFoundException("role", "name", roleName);
         }
 
         Role existedRole = rolesWithNameKey.get(roleName);
@@ -122,7 +123,7 @@ public class RoleManager implements Repository<Role> {
 
     public void removePermissionFromRole(String roleName, Permission permission) {
         if (!exists(roleName)) {
-            throw new IllegalArgumentException("role with name '" + roleName + "' not found");
+            throw new ResourceNotFoundException("role", "name", roleName);
         }
 
         Role existedRole = rolesWithNameKey.get(roleName);

@@ -1,5 +1,7 @@
 package com.example.command;
 
+import com.example.exception.ResourceNotFoundException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -15,7 +17,7 @@ public class CommandParser {
 
     public void executeCommand(String commandName, Scanner scanner, RBACSystem system) {
         if (!commands.containsKey(commandName)) {
-            throw new IllegalArgumentException(String.format("command '%s' not found in command registry", commandName));
+            throw new ResourceNotFoundException(String.format("command '%s' not found in command registry", commandName));
         }
         commands.get(commandName).execute(scanner, system);
     }

@@ -1,5 +1,7 @@
 package com.example.manager;
 
+import com.example.exception.DuplicatedResourceException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.filter.AssignmentFilter;
 import com.example.filter.AssignmentFilters;
 import com.example.model.*;
@@ -35,11 +37,11 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         }
 
         if (!userManager.exists(assignment.user().username())) {
-            throw new IllegalArgumentException("user '" + assignment.user().username() + "' does not exist");
+            throw new ResourceNotFoundException("user '" + assignment.user().username() + "' does not exist");
         }
 
         if (!roleManager.exists(assignment.role().getName())) {
-            throw new IllegalArgumentException("role '" + assignment.role().getName() + "' does not exist");
+            throw new ResourceNotFoundException("role '" + assignment.role().getName() + "' does not exist");
         }
 
         AssignmentFilter assignmentFilterByUser = AssignmentFilters.byUser(assignment.user());
@@ -51,7 +53,7 @@ public class AssignmentManager implements Repository<RoleAssignment> {
                 .anyMatch(assignmentFilterByActiveOnly::test);
 
         if (hasActiveDuplicate) {
-            throw new IllegalStateException(
+            throw new DuplicatedResourceException(
                     String.format("user '%s' already has active assignment for role '%s'",
                             assignment.user().username(), assignment.role().getName())
             );
@@ -161,8 +163,7 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     public void revokeAssignment(String assignmentId) {
         RoleAssignment assignment = findById(assignmentId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "assignment with id '" + assignmentId + "' not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("assignment", "id", assignmentId));
 
         if (assignment instanceof PermanentAssignment) {
             ((PermanentAssignment) assignment).revoke();
@@ -173,8 +174,7 @@ public class AssignmentManager implements Repository<RoleAssignment> {
 
     public void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
         RoleAssignment assignment = findById(assignmentId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "assignment with id '" + assignmentId + "' not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("assignment", "id", assignmentId));
 
         if ((assignment instanceof TemporaryAssignment temporaryAssignment)) {
             temporaryAssignment.extend(newExpirationDate);
