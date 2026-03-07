@@ -1,7 +1,6 @@
 package com.example.model;
 
-import java.time.ZonedDateTime;
-
+import static com.example.util.DateTimeUtils.getCurrentDateTime;
 import static com.example.util.ValidationUtils.*;
 
 public record AssignmentMetadata(String assignedBy, String assignedAt, String reason) {
@@ -9,7 +8,7 @@ public record AssignmentMetadata(String assignedBy, String assignedAt, String re
         assignedBy = normalizeString(assignedBy);
         validateAssignedBy(assignedBy);
 
-        String assignedAt = ZonedDateTime.now().format(DATE_TIME_FORMATTER);
+        String assignedAt = getCurrentDateTime();
         reason = (reason == null || reason.isBlank()) ? "not specified" : reason.trim();
 
         return new AssignmentMetadata(assignedBy, assignedAt, reason);

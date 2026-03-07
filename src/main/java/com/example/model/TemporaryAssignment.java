@@ -3,6 +3,8 @@ package com.example.model;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 
+import static com.example.util.DateTimeUtils.getCurrentDateTime;
+import static com.example.util.DateTimeUtils.isBefore;
 import static com.example.util.ValidationUtils.DATE_TIME_FORMATTER;
 import static com.example.util.ValidationUtils.validateExpirationDate;
 
@@ -24,7 +26,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
     }
 
     public void revoke() {
-        expiresAt = ZonedDateTime.now().format(DATE_TIME_FORMATTER);
+        expiresAt = getCurrentDateTime();
     }
 
     public String getExpiresAt() {
@@ -69,16 +71,13 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
     }
 
     public boolean isExpired() {
-        return isExpired(ZonedDateTime.now().format(DATE_TIME_FORMATTER));
+        return isExpired(getCurrentDateTime());
     }
 
     public boolean isExpired(String dateTimeToCompare) {
         validateExpirationDate(dateTimeToCompare);
 
-        ZonedDateTime zonedDateTimeToCompare = ZonedDateTime.parse(dateTimeToCompare, DATE_TIME_FORMATTER);
-        ZonedDateTime expiryDateTime = ZonedDateTime.parse(expiresAt, DATE_TIME_FORMATTER);
-
-        return !zonedDateTimeToCompare.isBefore(expiryDateTime);
+        return !isBefore(dateTimeToCompare, expiresAt);
     }
 
     public String getTimeRemaining() {
