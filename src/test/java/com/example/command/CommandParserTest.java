@@ -1,5 +1,6 @@
 package com.example.command;
 
+import com.example.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -46,8 +47,8 @@ class CommandParserTest {
         @Test
         @DisplayName("Выброс исключения при выполнении незарегистрированной команды")
         void shouldThrowExceptionForUnregisteredCommand() {
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
                     () -> parser.executeCommand("unknown", scanner, system)
             );
 

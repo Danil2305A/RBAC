@@ -1,6 +1,7 @@
 package com.example.manager;
 
 import com.example.exception.DuplicatedResourceException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
 import com.example.model.User;
@@ -219,7 +220,7 @@ public class UserManagerTest {
     }
 
     @Test
-    @DisplayName("Обновление несуществующего пользователя - должно выброситься IllegalArgumentException")
+    @DisplayName("Обновление несуществующего пользователя - должно выброситься исключение")
     public void updateNonExistingUserByUserName() {
         User user = User.validate("AkuskoDan",
                 "Akusko Danil Dmitrievich",
@@ -227,7 +228,7 @@ public class UserManagerTest {
 
         userManager.add(user);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> userManager.update("AkuskoDanil",
+        Assertions.assertThrows(ResourceNotFoundException.class, () -> userManager.update("AkuskoDanil",
                 "Akusko Danil Dmitrievich",
                 "akuskodanil13@gmail.com"));
     }
