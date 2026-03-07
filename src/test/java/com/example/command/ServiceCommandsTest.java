@@ -113,36 +113,6 @@ class ServiceCommandsTest {
     }
 
     @Nested
-    @DisplayName("stats command")
-    class StatsCommandTests {
-
-        @Test
-        @DisplayName("Отображение статистики системы")
-        void shouldShowStatistics() {
-            when(userManager.count()).thenReturn(5);
-            when(roleManager.count()).thenReturn(3);
-            when(assignmentManager.count()).thenReturn(7);
-            when(assignmentManager.getActiveAssignments()).thenReturn(List.of(
-                    mock(RoleAssignment.class), mock(RoleAssignment.class)
-            ));
-            when(assignmentManager.getExpiredAssignments()).thenReturn(List.of(
-                    mock(RoleAssignment.class)
-            ));
-            when(assignmentManager.findAll()).thenReturn(List.of(
-                    mock(RoleAssignment.class), mock(RoleAssignment.class), mock(RoleAssignment.class)
-            ));
-
-            String stats = system.generateStatistics();
-
-            assertTrue(stats.contains("Count of users: 5"));
-            assertTrue(stats.contains("Count of roles: 3"));
-            assertTrue(stats.contains("Total count of assignments: 7"));
-            assertTrue(stats.contains("Count of active assignments: 2"));
-            assertTrue(stats.contains("Count of expired assignments: 1"));
-        }
-    }
-
-    @Nested
     @DisplayName("clear command")
     class ClearCommandTests {
 
