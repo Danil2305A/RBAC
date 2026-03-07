@@ -2,6 +2,7 @@ package com.example.command;
 
 import com.example.filter.*;
 import com.example.model.*;
+import com.example.report.ReportGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -984,6 +985,63 @@ public class CommandRegistry {
                     }
 
                     System.out.printf("Data has been successfully saved to %s\n", filepath);
+                });
+
+        parser.registerCommand("report-users", "Generate user report (users and their active roles)",
+                (scanner, system) -> {
+                    ReportGenerator reportGenerator = new ReportGenerator();
+
+                    String filepath = "rbac-reports/users.txt";
+
+                    try {
+                        String report = reportGenerator.generateUserReport(
+                                system.getUserManager(),
+                                system.getAssignmentManager()
+                        );
+
+                        reportGenerator.exportToFile(report, filepath);
+
+                    } catch (Exception e) {
+                        System.out.printf("Error generating user report: %s\n", e.getMessage());
+                    }
+                });
+
+        parser.registerCommand("report-roles", "Generate role report (roles and user counts)",
+                (scanner, system) -> {
+                    ReportGenerator reportGenerator = new ReportGenerator();
+
+                    String filepath = "rbac-reports/roles.txt";
+
+                    try {
+                        String report = reportGenerator.generateRoleReport(
+                                system.getRoleManager(),
+                                system.getAssignmentManager()
+                        );
+
+                        reportGenerator.exportToFile(report, filepath);
+
+                    } catch (Exception e) {
+                        System.out.printf("Error generating role report: %s\n", e.getMessage());
+                    }
+                });
+
+        parser.registerCommand("report-matrix", "Generate permission matrix (users × resources)",
+                (scanner, system) -> {
+                    ReportGenerator reportGenerator = new ReportGenerator();
+
+                    String filepath = "rbac-reports/permission_matrix.txt";
+
+                    try {
+                        String report = reportGenerator.generatePermissionMatrix(
+                                system.getUserManager(),
+                                system.getAssignmentManager()
+                        );
+
+                        reportGenerator.exportToFile(report, filepath);
+
+                    } catch (Exception e) {
+                        System.out.printf("Error generating permission matrix: %s\n", e.getMessage());
+                    }
                 });
     }
 }
