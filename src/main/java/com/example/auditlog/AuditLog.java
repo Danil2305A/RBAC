@@ -1,5 +1,7 @@
 package com.example.auditlog;
 
+import com.example.util.FormatUtils;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -8,6 +10,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.example.util.ValidationUtils.DATE_TIME_FORMATTER;
 
@@ -41,19 +44,17 @@ public class AuditLog {
             return;
         }
 
-        System.out.println("-".repeat(103));
-        System.out.printf("| %-26s | %-30s | %-11s | %-10s | %-10s |\n",
-                "Timestamp", "Action", "Performer", "Target", "Details");
-        System.out.println("-".repeat(103));
-        entries.forEach(entry -> {
-            System.out.printf("| %-26s | %-30s | %-11s | %-10s | %-10s |\n",
-                    entry.timestamp(),
-                    entry.action(),
-                    entry.performer(),
-                    entry.target(),
-                    entry.details());
-            System.out.println("-".repeat(103));
-        });
+        String[] headers = {"Timestamp", "Action", "Performer", "Target", "Details"};
+        List<String[]> rows = entries.stream()
+                .map(entry -> new String[]{
+                        entry.timestamp(),
+                        entry.action(),
+                        entry.performer(),
+                        entry.target(),
+                        entry.details()
+                })
+                .collect(Collectors.toList());
+        System.out.println(FormatUtils.formatTable(headers, rows));
     }
 
     public void saveToFile(String filepath) {

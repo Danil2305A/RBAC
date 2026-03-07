@@ -1,11 +1,9 @@
 package com.example.command;
 
 import com.example.exception.ResourceNotFoundException;
+import com.example.util.FormatUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.TreeMap;
+import java.util.*;
 
 public class CommandParser {
     private final Map<String, Command> commands = new HashMap<>();
@@ -35,7 +33,12 @@ public class CommandParser {
     }
 
     public void printHelp() {
+        String[] headers = {"Command", "Description"};
+        List<String[]> rows = new ArrayList<>();
         new TreeMap<>(commandDescriptions)
-                .forEach((name, description) -> System.out.printf("%s: %s\n", name, description));
+                .forEach((name, description) -> {
+                    rows.add(new String[]{name, description});
+                });
+        System.out.println(FormatUtils.formatTable(headers, rows));
     }
 }

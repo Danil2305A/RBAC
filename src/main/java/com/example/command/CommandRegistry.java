@@ -6,6 +6,7 @@ import com.example.report.ReportGenerator;
 
 import static com.example.util.ConsoleUtils.*;
 
+import com.example.util.FormatUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -34,14 +35,16 @@ public class CommandRegistry {
                         System.out.println("Missing users");
                         return;
                     }
-                    System.out.println("-".repeat(170));
-                    System.out.printf("| %-20s | %-70s | %-70s |\n", "Username", "Full name", "Email");
-                    System.out.println("-".repeat(170));
-                    users.forEach(user -> {
-                        System.out.printf("| %-20s | %-70s | %-70s |\n",
-                                user.username(), user.fullName(), user.email());
-                        System.out.println("-".repeat(170));
-                    });
+                    String[] headers = {"Username", "Full name", "Email"};
+                    List<String[]> rows = users.stream()
+                            .map(user -> new String[]{
+                                    user.username(),
+                                    user.fullName(),
+                                    user.email()
+                            })
+                            .collect(Collectors.toList());
+
+                    System.out.println(FormatUtils.formatTable(headers, rows));
                 });
 
         parser.registerCommand("user-create", "Create new user",
@@ -190,14 +193,16 @@ public class CommandRegistry {
                         System.out.println("Missing roles");
                         return;
                     }
-                    System.out.println("-".repeat(88));
-                    System.out.printf("| %-41s | %-21s | %-16s |\n", "ID", "Name", "Permission count");
-                    System.out.println("-".repeat(88));
-                    roles.forEach(role -> {
-                        System.out.printf("| %-41s | %-21s | %-16s |\n",
-                                role.getId(), role.getName(), role.getPermissions().size());
-                        System.out.println("-".repeat(88));
-                    });
+
+                    String[] headers = {"ID", "Name", "Permission count"};
+                    List<String[]> rows = roles.stream()
+                            .map(role -> new String[]{
+                                    role.getId(),
+                                    role.getName(),
+                                    String.valueOf(role.getPermissions().size())
+                            })
+                            .collect(Collectors.toList());
+                    System.out.println(FormatUtils.formatTable(headers, rows));
                 });
 
         parser.registerCommand("role-create", "Create new role",
@@ -570,19 +575,17 @@ public class CommandRegistry {
                         return;
                     }
 
-                    System.out.println("-".repeat(97));
-                    System.out.printf("| %-20s | %-10s | %-15s | %-10s | %-26s |\n",
-                            "Username", "Role name", "Type", "Status", "Assigned at");
-                    System.out.println("-".repeat(97));
-                    assignments.forEach(assignment -> {
-                        System.out.printf("| %-20s | %-10s | %-15s | %-10s | %-26s |\n",
-                                assignment.user().username(),
-                                assignment.role().getName(),
-                                assignment.assignmentType(),
-                                assignment.isActive() ? "ACTIVE" : "NOT ACTIVE",
-                                assignment.metadata().assignedAt());
-                        System.out.println("-".repeat(97));
-                    });
+                    String[] headers = {"Username", "Role name", "Type", "Status", "Assigned at"};
+                    List<String[]> rows = assignments.stream()
+                            .map(assignment -> new String[]{
+                                    assignment.user().username(),
+                                    assignment.role().getName(),
+                                    assignment.assignmentType(),
+                                    assignment.isActive() ? "ACTIVE" : "NOT ACTIVE",
+                                    assignment.metadata().assignedAt()
+                            })
+                            .collect(Collectors.toList());
+                    System.out.println(FormatUtils.formatTable(headers, rows));
                 });
 
         parser.registerCommand("assignment-list-user", "List of all assignments for user",
