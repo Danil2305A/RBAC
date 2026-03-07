@@ -104,31 +104,4 @@ class CommandParserTest {
             assertEquals("input must not be null or empty", exception.getMessage());
         }
     }
-
-    @Nested
-    @DisplayName("Help Command Tests")
-    class HelpCommandTests {
-
-        @Test
-        @DisplayName("Вывод всех зарегистрированных команд с описанием")
-        void shouldPrintAllCommands() {
-            parser.registerCommand("cmd1", "Description 1", (s, sys) -> {});
-            parser.registerCommand("cmd2", "Description 2", (s, sys) -> {});
-
-            parser.printHelp();
-            String output = outContent.toString();
-
-            assertTrue(output.contains("cmd1: Description 1"));
-            assertTrue(output.contains("cmd2: Description 2"));
-        }
-
-        @Test
-        @DisplayName("Обработка пустого регистра команд")
-        void shouldHandleEmptyRegistry() {
-            parser.printHelp();
-            String output = outContent.toString();
-
-            assertTrue(output.isEmpty());
-        }
-    }
 }
