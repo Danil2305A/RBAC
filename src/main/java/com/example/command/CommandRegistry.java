@@ -56,11 +56,17 @@ public class CommandRegistry {
                     try {
                         newUser = User.validate(username, fullName, email);
                     } catch (Exception e) {
+                        system.getLogger().log(
+                                "user-create", system.getCurrentUser(), "user", "exception"
+                        );
                         System.out.printf("Error creating user: %s\n", e.getMessage());
                     }
 
                     if (newUser != null) {
                         system.getUserManager().add(newUser);
+                        system.getLogger().log(
+                                "user-create", system.getCurrentUser(), "user", "success"
+                        );
                         System.out.println("New user has been successfully created");
                     }
                 });
@@ -115,12 +121,18 @@ public class CommandRegistry {
                     System.out.print("Confirm user deletion? (y/n): ");
                     String answer = scanner.nextLine().trim().toLowerCase();
                     if (!answer.equals("y")) {
+                        system.getLogger().log(
+                                "user-delete", system.getCurrentUser(), "user", "cancelling"
+                        );
                         System.out.println("Canceling user deletion");
                         return;
                     }
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
                     if (user.isEmpty()) {
+                        system.getLogger().log(
+                                "user-delete", system.getCurrentUser(), "user", "error"
+                        );
                         System.out.printf("User with username '%s' not found\n", username);
                         return;
                     }
@@ -130,6 +142,9 @@ public class CommandRegistry {
                     );
 
                     system.getUserManager().remove(user.get());
+                    system.getLogger().log(
+                            "user-delete", system.getCurrentUser(), "user", "success"
+                    );
                     System.out.println("User and his assignments have been successfully deleted");
                 });
 
@@ -198,6 +213,14 @@ public class CommandRegistry {
                     System.out.print("Enter role name: ");
                     String roleName = scanner.nextLine().trim();
 
+                    if (roleName.toLowerCase().contains("admin")) {
+                        system.getLogger().log(
+                                "role-create", system.getCurrentUser(), "role", "error"
+                        );
+                        System.out.println("Error creating role: DON`T TOUCH ADMIN ROLE!");
+                        return;
+                    }
+
                     System.out.print("Enter role description: ");
                     String roleDescription = scanner.nextLine().trim();
 
@@ -206,17 +229,26 @@ public class CommandRegistry {
                     try {
                         newRole = new Role(roleName, roleDescription, new HashSet<>());
                     } catch (Exception e) {
+                        system.getLogger().log(
+                                "role-create", system.getCurrentUser(), "role", "exception"
+                        );
                         System.out.printf("Error creating role: %s\n", e.getMessage());
                         return;
                     }
 
                     system.getRoleManager().add(newRole);
+                    system.getLogger().log(
+                            "role-create", system.getCurrentUser(), "role", "success"
+                    );
                     System.out.println("New role has been successfully created");
 
                     while (true) {
                         System.out.print("Add new permission to role? (y/n): ");
                         String answer = scanner.nextLine().trim().toLowerCase();
                         if (!answer.equals("y")) {
+                            system.getLogger().log(
+                                    "permission add", system.getCurrentUser(), "permission", "cancelling"
+                            );
                             System.out.println("Canceling permission addition");
                             return;
                         }
@@ -233,6 +265,9 @@ public class CommandRegistry {
                         Permission permission = new Permission(name, resource, description);
                         system.getRoleManager().addPermissionToRole(roleName, permission);
 
+                        system.getLogger().log(
+                                "permission add", system.getCurrentUser(), "permission", "success"
+                        );
                         System.out.println("Permission has been successfully added to role");
                     }
 
@@ -259,6 +294,11 @@ public class CommandRegistry {
                     System.out.print("Enter new role name: ");
                     String newRoleName = scanner.nextLine().trim();
 
+                    if (roleName.toLowerCase().contains("admin") || newRoleName.toLowerCase().contains("admin")) {
+                        System.out.println("Error updating role data: DON`T TOUCH ADMIN ROLE!");
+                        return;
+                    }
+
                     System.out.print("Enter new description: ");
                     String newDescription = scanner.nextLine().trim();
 
@@ -279,6 +319,9 @@ public class CommandRegistry {
 
                     Optional<Role> role = system.getRoleManager().findByName(roleName);
                     if (role.isEmpty()) {
+                        system.getLogger().log(
+                                "role-delete", system.getCurrentUser(), "role", "error"
+                        );
                         System.out.printf("Role with name '%s' not found\n", roleName);
                         return;
                     }
@@ -286,6 +329,9 @@ public class CommandRegistry {
                     System.out.print("Confirm role deletion? (y/n): ");
                     String answer = scanner.nextLine().trim().toLowerCase();
                     if (!answer.equals("y")) {
+                        system.getLogger().log(
+                                "role-delete", system.getCurrentUser(), "role", "cancelling"
+                        );
                         System.out.println("Canceling role deletion");
                         return;
                     }
@@ -294,9 +340,15 @@ public class CommandRegistry {
                         List<RoleAssignment> assignments = system.getAssignmentManager().findByRole(role.get());
                         List<User> users = new ArrayList<>();
                         assignments.forEach(assignment -> users.add(assignment.user()));
+                        system.getLogger().log(
+                                "role-delete", system.getCurrentUser(), "role", "error"
+                        );
                         System.out.printf("Role with name '%s' is assigned to users:\n", roleName);
                         users.forEach(user -> System.out.println(user.format()));
                     } else {
+                        system.getLogger().log(
+                                "role-delete", system.getCurrentUser(), "role", "success"
+                        );
                         System.out.println("Role have been successfully deleted");
                     }
                 });
@@ -330,6 +382,11 @@ public class CommandRegistry {
                 (scanner, system) -> {
                     System.out.print("Enter role name: ");
                     String roleName = scanner.nextLine().trim();
+
+                    if (roleName.toLowerCase().contains("admin")) {
+                        System.out.println("DON`T TOUCH ADMIN ROLE!");
+                        return;
+                    }
 
                     Optional<Role> role = system.getRoleManager().findByName(roleName);
                     if (role.isEmpty()) {
@@ -427,6 +484,9 @@ public class CommandRegistry {
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
                     if (user.isEmpty()) {
+                        system.getLogger().log(
+                                "assign-role", system.getCurrentUser(), "assignment", "error"
+                        );
                         System.out.printf("User with username '%s' not found\n", username);
                         return;
                     }
@@ -436,6 +496,9 @@ public class CommandRegistry {
                             .toList();
 
                     if (roles.isEmpty()) {
+                        system.getLogger().log(
+                                "assign-role", system.getCurrentUser(), "assignment", "error"
+                        );
                         System.out.println("No available roles");
                         return;
                     }
@@ -450,6 +513,9 @@ public class CommandRegistry {
                     String roleName = scanner.nextLine().trim();
 
                     if (!roleNames.contains(roleName)) {
+                        system.getLogger().log(
+                                "assign-role", system.getCurrentUser(), "assignment", "cancelling"
+                        );
                         System.out.println("Cancelling");
                         return;
                     }
@@ -461,6 +527,9 @@ public class CommandRegistry {
 
                     if (!assignmentType.equalsIgnoreCase("permanent") &&
                             !assignmentType.equalsIgnoreCase("temporary")) {
+                        system.getLogger().log(
+                                "assign-role", system.getCurrentUser(), "assignment", "cancelling"
+                        );
                         System.out.println("Cancelling");
                         return;
                     }
@@ -486,10 +555,16 @@ public class CommandRegistry {
                     try {
                         system.getAssignmentManager().add(assignment);
                     } catch (Exception e) {
+                        system.getLogger().log(
+                                "assign-role", system.getCurrentUser(), "assignment", "error"
+                        );
                         System.out.printf("Error assigning role for user: %s\n", e.getMessage());
                         return;
                     }
 
+                    system.getLogger().log(
+                            "assign-role", system.getCurrentUser(), "assignment", "success"
+                    );
                     System.out.println("Role has been successfully assigned for user");
                 });
 
@@ -500,6 +575,9 @@ public class CommandRegistry {
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
                     if (user.isEmpty()) {
+                        system.getLogger().log(
+                                "revoke-role", system.getCurrentUser(), "assignment", "error"
+                        );
                         System.out.printf("User with username '%s' not found\n", username);
                         return;
                     }
@@ -508,6 +586,9 @@ public class CommandRegistry {
                             .stream().filter(RoleAssignment::isActive).toList();
 
                     if (activeAssignments.isEmpty()) {
+                        system.getLogger().log(
+                                "revoke-role", system.getCurrentUser(), "assignment", "error"
+                        );
                         System.out.println("No active assignments for this user");
                         return;
                     }
@@ -521,13 +602,28 @@ public class CommandRegistry {
                     System.out.print("\nEnter assignment id: ");
                     String assignmentId = scanner.nextLine().trim();
 
+                    Optional<RoleAssignment> assignment = system.getAssignmentManager().findById(assignmentId);
+                    if (assignment.isPresent() && assignment.get().role().getName().toLowerCase().contains("admin")) {
+                        system.getLogger().log(
+                                "revoke-role", system.getCurrentUser(), "assignment", "error"
+                        );
+                        System.out.println("Error revoking role from user: DON`T TOUCH ADMIN ROLE!");
+                        return;
+                    }
+
                     try {
                         system.getAssignmentManager().revokeAssignment(assignmentId);
                     } catch (Exception e) {
+                        system.getLogger().log(
+                                "revoke-role", system.getCurrentUser(), "assignment", "exception"
+                        );
                         System.out.printf("Error revoking role from user: %s\n", e.getMessage());
                         return;
                     }
 
+                    system.getLogger().log(
+                            "revoke-role", system.getCurrentUser(), "assignment", "success"
+                    );
                     System.out.println("Role has been successfully revoked from user");
                 });
 
@@ -825,6 +921,11 @@ public class CommandRegistry {
                     System.out.println(system.generateStatistics());
                 });
 
+        parser.registerCommand("audit-logs", "Audit logs",
+                (scanner, system) -> {
+                    system.getLogger().printLogs();
+                });
+
         parser.registerCommand("clear", "Clear screen",
                 (scanner, system) -> {
                     System.out.print("\033[H\033[2J");
@@ -843,6 +944,8 @@ public class CommandRegistry {
                             parser.executeCommand("save", scanner, system);
                         }
 
+                        system.getLogger().saveToFile("rbac-log/log.txt");
+                        System.out.println("You can view logs in rbac-log/log.txt");
                         scanner.close();
                         System.exit(0);
                     }
