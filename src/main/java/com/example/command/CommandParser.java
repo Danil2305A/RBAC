@@ -5,6 +5,7 @@ import com.example.exception.ResourceNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 public class CommandParser {
     private final Map<String, Command> commands = new HashMap<>();
@@ -34,7 +35,7 @@ public class CommandParser {
     }
 
     public void printHelp() {
-        commandDescriptions.forEach(
-                (name, description) -> System.out.printf("%s: %s\n", name, description));
+        new TreeMap<>(commandDescriptions)
+                .forEach((name, description) -> System.out.printf("%s: %s\n", name, description));
     }
 }
