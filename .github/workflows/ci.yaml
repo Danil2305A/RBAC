@@ -53,3 +53,39 @@ jobs:
           path: |
             **/build/reports/tests/
           retention-days: 30
+
+      - name: Run tests in package com.example.util
+        run: ./gradlew test --tests com.example.util.*
+
+      - name: Upload test reports (package com.example.util)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-util-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/tests/
+          retention-days: 30
+
+      - name: Run tests in package com.example.auditlog
+        run: ./gradlew test --tests com.example.auditlog.*
+
+      - name: Upload test reports (package com.example.auditlog)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-auditlog-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/tests/
+          retention-days: 30
+
+      - name: Run tests in package com.example.report
+        run: ./gradlew test --tests com.example.report.*
+
+      - name: Upload test reports (package com.example.report)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-reports-${{ github.run_id }}
+          path: |
+            **/build/reports/tests/
+          retention-days: 30
