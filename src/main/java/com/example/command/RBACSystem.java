@@ -1,5 +1,6 @@
 package com.example.command;
 
+import com.example.auditlog.AuditLog;
 import com.example.manager.AssignmentManager;
 import com.example.manager.RoleManager;
 import com.example.manager.UserManager;
@@ -14,6 +15,8 @@ public class RBACSystem {
     private AssignmentManager assignmentManager;
     private String currentUser;
 
+    private AuditLog logger;
+
     public UserManager getUserManager() {
         return userManager;
     }
@@ -24,6 +27,14 @@ public class RBACSystem {
 
     public AssignmentManager getAssignmentManager() {
         return assignmentManager;
+    }
+
+    public AuditLog getLogger() {
+        return logger;
+    }
+
+    public void setLogger(AuditLog logger) {
+        this.logger = logger;
     }
 
     public String getCurrentUser() {
@@ -38,6 +49,8 @@ public class RBACSystem {
         userManager = new UserManager();
         roleManager = new RoleManager();
         assignmentManager = new AssignmentManager();
+
+        logger = new AuditLog();
 
         assignmentManager.setUserManager(userManager);
         assignmentManager.setRoleManager(roleManager);
