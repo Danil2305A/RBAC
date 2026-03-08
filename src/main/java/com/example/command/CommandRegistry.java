@@ -93,7 +93,10 @@ public class CommandRegistry {
                         System.out.println("missing");
                         return;
                     }
-                    assignments.forEach(assignment -> System.out.println(assignment.role()));
+                    assignments.forEach(assignment -> {
+                        System.out.println();
+                        System.out.println(assignment.role());
+                    });
                 });
 
         parser.registerCommand("user-update", "Update user data",
@@ -384,6 +387,7 @@ public class CommandRegistry {
 
                     AtomicInteger i = new AtomicInteger();
                     permissions.forEach(permission -> {
+                        System.out.println();
                         System.out.println(i.incrementAndGet() + ". " + permission.format());
                     });
 
@@ -428,7 +432,10 @@ public class CommandRegistry {
                         return;
                     }
                     System.out.println("Filtered roles:");
-                    filteredRoles.forEach(role -> System.out.println(role.format()));
+                    filteredRoles.forEach(role -> {
+                        System.out.println();
+                        System.out.println(role.format());
+                    });
                 });
     }
 
@@ -462,7 +469,10 @@ public class CommandRegistry {
                     roles.forEach(role -> roleNames.add(role.getName()));
 
                     System.out.println("Available roles:");
-                    roles.forEach(System.out::println);
+                    roles.forEach(role -> {
+                        System.out.println();
+                        System.out.println(role);
+                    });
 
                     String roleName = promptString(scanner, "Enter role name: ");
 
@@ -545,6 +555,7 @@ public class CommandRegistry {
                     System.out.println("Active assignments for user:");
                     activeAssignments.forEach(roleAssignment -> {
                         AbstractRoleAssignment assignment = (AbstractRoleAssignment) roleAssignment;
+                        System.out.println();
                         System.out.println(assignment.summary());
                     });
 
@@ -618,6 +629,7 @@ public class CommandRegistry {
 
                     assignments.forEach(roleAssignment -> {
                         AbstractRoleAssignment assignment = (AbstractRoleAssignment) roleAssignment;
+                        System.out.println();
                         System.out.println(assignment.summary());
                     });
                 });
@@ -656,6 +668,7 @@ public class CommandRegistry {
 
                     assignments.forEach(roleAssignment -> {
                         AbstractRoleAssignment assignment = (AbstractRoleAssignment) roleAssignment;
+                        System.out.println();
                         System.out.println(assignment.summary());
                     });
                 });
@@ -673,6 +686,7 @@ public class CommandRegistry {
 
                     assignments.forEach(roleAssignment -> {
                         AbstractRoleAssignment assignment = (AbstractRoleAssignment) roleAssignment;
+                        System.out.println();
                         System.out.println(assignment.summary());
                     });
                 });
@@ -690,6 +704,7 @@ public class CommandRegistry {
                     System.out.println("Temporary assignments:");
                     assignments.forEach(roleAssignment -> {
                         AbstractRoleAssignment assignment = (AbstractRoleAssignment) roleAssignment;
+                        System.out.println();
                         System.out.println(assignment.summary());
                     });
 
@@ -741,6 +756,7 @@ public class CommandRegistry {
                     System.out.println("Filtered assignments:");
                     filteredAssignments.forEach(roleAssignment -> {
                         AbstractRoleAssignment assignment = (AbstractRoleAssignment) roleAssignment;
+                        System.out.println();
                         System.out.println(assignment.summary());
                     });
                 });
