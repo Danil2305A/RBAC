@@ -1,5 +1,7 @@
 package com.example.manager;
 
+import com.example.exception.DuplicatedResourceException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.filter.AssignmentFilter;
 import com.example.filter.AssignmentFilters;
 import com.example.model.*;
@@ -54,7 +56,7 @@ public class AssignmentManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление назначения для несуществующего пользователя - должно выброситься IllegalArgumentException")
+    @DisplayName("Добавление назначения для несуществующего пользователя - должно выброситься исключение")
     public void addAssignmentForNonExistingUser() {
         User user = User.validate("akuskodan", "Akusko Danil Dmitrievich", "akusko@gmail.com");
         Role role = new Role("admin2", "Admin role", Collections.emptySet());
@@ -62,11 +64,11 @@ public class AssignmentManagerTest {
 
         roleManager.add(role);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> assignmentManager.add(assignment));
+        Assertions.assertThrows(ResourceNotFoundException.class, () -> assignmentManager.add(assignment));
     }
 
     @Test
-    @DisplayName("Добавление назначения для несуществующей роли - должно выброситься IllegalArgumentException")
+    @DisplayName("Добавление назначения для несуществующей роли - должно выброситься исключение")
     public void addAssignmentForNonExistingRole() {
         User user = User.validate("akuskodan", "Akusko Danil Dmitrievich", "akusko@gmail.com");
         Role role = new Role("admin3", "Admin role", Collections.emptySet());
@@ -74,11 +76,11 @@ public class AssignmentManagerTest {
 
         userManager.add(user);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> assignmentManager.add(assignment));
+        Assertions.assertThrows(ResourceNotFoundException.class, () -> assignmentManager.add(assignment));
     }
 
     @Test
-    @DisplayName("Добавление дублирующегося активного назначения - должно выброситься IllegalStateException")
+    @DisplayName("Добавление дублирующегося активного назначения - должно выброситься исключение")
     public void addDuplicateActiveAssignment() {
         User user = User.validate("akuskodan", "Akusko Danil Dmitrievich", "akusko@gmail.com");
         Role role = new Role("admin4", "Admin role", Collections.emptySet());
@@ -88,7 +90,7 @@ public class AssignmentManagerTest {
         roleManager.add(role);
         assignmentManager.add(assignment);
 
-        Assertions.assertThrows(IllegalStateException.class,
+        Assertions.assertThrows(DuplicatedResourceException.class,
                 () -> assignmentManager.add(assignment));
     }
 
@@ -386,7 +388,7 @@ public class AssignmentManagerTest {
     }
 
     @Test
-    @DisplayName("Успешное удаление временного назначения при отзыве")
+    @DisplayName("Успешное отзыв временного назначения")
     public void revokeTemporaryAssignment() {
         User user = User.validate("akuskodan", "Akusko Danil Dmitrievich", "akusko@gmail.com");
         Role role = new Role("admin06", "Admin role", Collections.emptySet());
@@ -405,9 +407,9 @@ public class AssignmentManagerTest {
     }
 
     @Test
-    @DisplayName("Отзыв несуществующего назначения - должно выброситься IllegalArgumentException")
+    @DisplayName("Отзыв несуществующего назначения - должно выброситься исключение")
     public void revokeNonExistingAssignment() {
-        Assertions.assertThrows(IllegalArgumentException.class,
+        Assertions.assertThrows(ResourceNotFoundException.class,
                 () -> assignmentManager.revokeAssignment("non-existent-id"));
     }
 
@@ -432,9 +434,9 @@ public class AssignmentManagerTest {
     }
 
     @Test
-    @DisplayName("Продление несуществующего назначения - должно выброситься IllegalArgumentException")
+    @DisplayName("Продление несуществующего назначения - должно выброситься исключение")
     public void extendNonExistingAssignment() {
-        Assertions.assertThrows(IllegalArgumentException.class,
+        Assertions.assertThrows(ResourceNotFoundException.class,
                 () -> assignmentManager.extendTemporaryAssignment("non-existent-id",
                         "3000-02-24 17:00:00 +07:00"));
     }

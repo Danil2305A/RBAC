@@ -1,5 +1,7 @@
 package com.example.manager;
 
+import com.example.exception.DuplicatedResourceException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.filter.RoleFilter;
 import com.example.filter.RoleFilters;
 import com.example.model.*;
@@ -29,13 +31,12 @@ public class RoleManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление существующей роли c тем же name - дожл")
+    @DisplayName("Добавление существующей роли c тем же name - должно выброситься исключение")
     public void addExistingRole() {
         Role role = new Role("Manager", "Manager role", Collections.emptySet());
 
-        Assertions.assertThrows(IllegalArgumentException.class,
+        Assertions.assertThrows(DuplicatedResourceException.class,
                 () -> new Role("Manager", "Manager role", Collections.emptySet()));
-
     }
 
     @Test
@@ -225,11 +226,11 @@ public class RoleManagerTest {
     }
 
     @Test
-    @DisplayName("Добавление разрешения к несуществующей роли - должно выброситься IllegalArgumentException")
+    @DisplayName("Добавление разрешения к несуществующей роли - должно выброситься исключение")
     public void addPermissionToNonExistingRole() {
         Permission permission = new Permission("WRITE", "FILE", "descr");
 
-        Assertions.assertThrows(IllegalArgumentException.class,
+        Assertions.assertThrows(ResourceNotFoundException.class,
                 () -> roleManager.addPermissionToRole("non", permission));
     }
 
@@ -252,11 +253,11 @@ public class RoleManagerTest {
     }
 
     @Test
-    @DisplayName("Удаление разрешения из несуществующей роли - должно выброситься IllegalArgumentException")
+    @DisplayName("Удаление разрешения из несуществующей роли - должно выброситься исключение")
     public void removePermissionFromNonExistingRole() {
         Permission permission = new Permission("WRITE", "FILE", "DESCR");
 
-        Assertions.assertThrows(IllegalArgumentException.class,
+        Assertions.assertThrows(ResourceNotFoundException.class,
                 () -> roleManager.removePermissionFromRole("NON", permission));
     }
 

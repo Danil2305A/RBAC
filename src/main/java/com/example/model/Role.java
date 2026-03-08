@@ -1,6 +1,10 @@
 package com.example.model;
 
+import com.example.exception.DuplicatedResourceException;
+
 import java.util.*;
+
+import static com.example.util.ValidationUtils.*;
 
 public class Role {
     private String id;
@@ -11,12 +15,18 @@ public class Role {
     private static final Set<String> usedNames = new HashSet<>();
 
     public Role(String name, String description, Set<Permission> permissions) {
-        name = name != null ? name.trim() : null;
-        description = description != null ? description.trim() : null;
+        name = normalizeString(name);
+        description = normalizeString(description);
 
-        validateName(name);
-        validateDescription(description);
-        validatePermissions(permissions);
+        validateRoleName(name);
+
+        if (usedNames.contains(name)) {
+            throw new DuplicatedResourceException(String.format("role with name '%s' already exists", name));
+        }
+        usedNames.add(name);
+
+        validateRoleDescription(description);
+        validateRolePermissions(permissions);
 
         this.id = "role_" + UUID.randomUUID();
         this.name = name;
@@ -26,29 +36,6 @@ public class Role {
 
     public Set<String> getUsedNames() {
         return usedNames;
-    }
-
-    private void validateName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("role name must not be null or blank");
-        }
-
-        if (usedNames.contains(name)) {
-            throw new IllegalArgumentException(String.format("role with name '%s' already exists", name));
-        }
-        usedNames.add(name);
-    }
-
-    private void validateDescription(String description) {
-        if (description == null || description.isBlank()) {
-            throw new IllegalArgumentException("role description must not be null or blank");
-        }
-    }
-
-    private void validatePermissions(Set<Permission> permissions) {
-        if (permissions == null) {
-            throw new IllegalArgumentException("role permissions must not be null");
-        }
     }
 
     public String getId() {
@@ -72,16 +59,23 @@ public class Role {
     }
 
     public void setName(String name) {
-        validateName(name);
+        name = normalizeString(name);
+        validateRoleName(name);
+
         usedNames.remove(this.name);
         this.name = name;
     }
 
     public void setDescription(String description) {
+        description = normalizeString(description);
+        validateRoleDescription(description);
+
         this.description = description;
     }
 
     public void setPermissions(Set<Permission> permissions) {
+        validateRolePermissions(permissions);
+
         this.permissions = permissions;
     }
 

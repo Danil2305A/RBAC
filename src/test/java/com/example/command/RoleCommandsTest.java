@@ -1,14 +1,17 @@
 package com.example.command;
 
+import com.example.auditlog.AuditLog;
 import com.example.manager.UserManager;
 import com.example.manager.RoleManager;
 import com.example.manager.AssignmentManager;
 import com.example.model.*;
 import com.example.filter.RoleFilter;
+import com.example.util.ConsoleUtils;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayOutputStream;
@@ -40,6 +43,7 @@ class RoleCommandsTest {
     @BeforeEach
     void setUp() {
         system = new RBACSystem();
+        system.setLogger(new AuditLog());
         setField(system, "userManager", userManager);
         setField(system, "roleManager", roleManager);
         setField(system, "assignmentManager", assignmentManager);
@@ -130,49 +134,77 @@ class RoleCommandsTest {
         @Test
         @DisplayName("Создание роли без прав")
         void shouldCreateRoleWithoutPermissions() {
-            when(scanner.nextLine())
-                    .thenReturn("Manager")
-                    .thenReturn("Manager role")
-                    .thenReturn("n");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("Manager");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role description: ")))
+                        .thenReturn("Manager role");
+                mockedUtils.when(() -> ConsoleUtils.promptYesNo(eq(scanner), eq("Add new permission to role? (y/n): ")))
+                        .thenReturn(false);
 
-            parser.parseAndExecute("role-create", scanner, system);
+                parser.parseAndExecute("role-create", scanner, system);
 
-            verify(roleManager, times(1)).add(any(Role.class));
-            String output = outContent.toString();
-            assertTrue(output.contains("New role has been successfully created"));
+                verify(roleManager, times(1)).add(any(Role.class));
+                String output = outContent.toString();
+                assertTrue(output.contains("New role has been successfully created"));
+            }
         }
 
         @Test
         @DisplayName("Создание роли с правами")
         void shouldCreateRoleWithPermissions() {
-            // Arrange
-            when(scanner.nextLine())
-                    .thenReturn("Manager")
-                    .thenReturn("Manager role")
-                    .thenReturn("y")
-                    .thenReturn("READ")
-                    .thenReturn("users")
-                    .thenReturn("Can read users")
-                    .thenReturn("n");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("Manager");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role description: ")))
+                        .thenReturn("Manager role");
+                mockedUtils.when(() -> ConsoleUtils.promptYesNo(eq(scanner), eq("Add new permission to role? (y/n): ")))
+                        .thenReturn(true)
+                        .thenReturn(false);
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission name: ")))
+                        .thenReturn("READ");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission resource: ")))
+                        .thenReturn("users");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission description: ")))
+                        .thenReturn("Can read users");
 
-            parser.parseAndExecute("role-create", scanner, system);
+                parser.parseAndExecute("role-create", scanner, system);
 
-            verify(roleManager, times(1)).add(any(Role.class));
-            verify(roleManager, times(1)).addPermissionToRole(eq("Manager"), any(Permission.class));
+                verify(roleManager, times(1)).add(any(Role.class));
+                verify(roleManager, times(1)).addPermissionToRole(eq("Manager"), any(Permission.class));
+            }
+        }
+
+        @Test
+        @DisplayName("Запрет создания роли с именем admin")
+        void shouldNotCreateRoleWithAdminName() {
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("admin");
+
+                parser.parseAndExecute("role-create", scanner, system);
+
+                verify(roleManager, never()).add(any(Role.class));
+                String output = outContent.toString();
+                assertTrue(output.contains("DON`T TOUCH ADMIN ROLE!"));
+            }
         }
 
         @Test
         @DisplayName("Обработка ошибки создания роли")
         void shouldHandleCreationErrors() {
-            when(scanner.nextLine())
-                    .thenReturn("")
-                    .thenReturn("Manager role");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role description: ")))
+                        .thenReturn("Manager role");
 
-            parser.parseAndExecute("role-create", scanner, system);
+                parser.parseAndExecute("role-create", scanner, system);
 
-            verify(roleManager, never()).add(any());
-            String output = outContent.toString();
-            assertTrue(output.contains("Error creating role"));
+                verify(roleManager, never()).add(any());
+                String output = outContent.toString();
+                assertTrue(output.contains("Error creating role"));
+            }
         }
     }
 
@@ -187,28 +219,35 @@ class RoleCommandsTest {
             Permission perm = new Permission("READ", "users", "Can read users");
             Role role = createTestRole(roleName, "Admin role", Set.of(perm));
 
-            when(scanner.nextLine()).thenReturn(roleName);
-            when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
 
-            parser.parseAndExecute("role-view", scanner, system);
-            String output = outContent.toString();
+                parser.parseAndExecute("role-view", scanner, system);
+                String output = outContent.toString();
 
-            assertTrue(output.contains(roleName));
-            assertTrue(output.contains("Admin role"));
-            assertTrue(output.contains(perm.format()));
+                assertTrue(output.contains(roleName));
+                assertTrue(output.contains("Admin role"));
+                assertTrue(output.contains(perm.format()));
+            }
         }
 
         @Test
         @DisplayName("Обработка отсутствия роли")
         void shouldShowErrorWhenRoleNotFound() {
             String roleName = "unknown";
-            when(scanner.nextLine()).thenReturn(roleName);
-            when(roleManager.findByName(roleName)).thenReturn(Optional.empty());
 
-            parser.parseAndExecute("role-view", scanner, system);
-            String output = outContent.toString();
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                when(roleManager.findByName(roleName)).thenReturn(Optional.empty());
 
-            assertTrue(output.contains("Role with name 'unknown' not found"));
+                parser.parseAndExecute("role-view", scanner, system);
+                String output = outContent.toString();
+
+                assertTrue(output.contains("Role with name 'unknown' not found"));
+            }
         }
     }
 
@@ -219,33 +258,75 @@ class RoleCommandsTest {
         @Test
         @DisplayName("Успешное обновление роли")
         void shouldUpdateRole() {
-            when(scanner.nextLine())
-                    .thenReturn("OldRole")
-                    .thenReturn("NewRole")
-                    .thenReturn("New description");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("OldRole");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter new role name: ")))
+                        .thenReturn("NewRole");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter new description: ")))
+                        .thenReturn("New description");
 
-            parser.parseAndExecute("role-update", scanner, system);
+                parser.parseAndExecute("role-update", scanner, system);
 
-            verify(roleManager, times(1)).update("OldRole", "NewRole", "New description");
-            String output = outContent.toString();
-            assertTrue(output.contains("Role data has been successfully updated"));
+                verify(roleManager, times(1)).update("OldRole", "NewRole", "New description");
+                String output = outContent.toString();
+                assertTrue(output.contains("Role data has been successfully updated"));
+            }
+        }
+
+        @Test
+        @DisplayName("Запрет обновления admin роли")
+        void shouldNotUpdateAdminRole() {
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("admin");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter new role name: ")))
+                        .thenReturn("NewRole");
+
+                parser.parseAndExecute("role-update", scanner, system);
+
+                verify(roleManager, never()).update(anyString(), anyString(), anyString());
+                String output = outContent.toString();
+                assertTrue(output.contains("DON`T TOUCH ADMIN ROLE!"));
+            }
+        }
+
+        @Test
+        @DisplayName("Запрет переименования в admin")
+        void shouldNotRenameToAdmin() {
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("OldRole");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter new role name: ")))
+                        .thenReturn("admin");
+
+                parser.parseAndExecute("role-update", scanner, system);
+
+                verify(roleManager, never()).update(anyString(), anyString(), anyString());
+                String output = outContent.toString();
+                assertTrue(output.contains("DON`T TOUCH ADMIN ROLE!"));
+            }
         }
 
         @Test
         @DisplayName("Обработка ошибки обновления роли")
         void shouldHandleUpdateErrors() {
-            when(scanner.nextLine())
-                    .thenReturn("OldRole")
-                    .thenReturn("")
-                    .thenReturn("New description");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("OldRole");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter new role name: ")))
+                        .thenReturn("");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter new description: ")))
+                        .thenReturn("New description");
 
-            doThrow(new IllegalArgumentException("Invalid role name"))
-                    .when(roleManager).update(eq("OldRole"), eq(""), eq("New description"));
+                doThrow(new IllegalArgumentException("Invalid role name"))
+                        .when(roleManager).update(eq("OldRole"), eq(""), eq("New description"));
 
-            parser.parseAndExecute("role-update", scanner, system);
-            String output = outContent.toString();
+                parser.parseAndExecute("role-update", scanner, system);
+                String output = outContent.toString();
 
-            assertTrue(output.contains("Error updating role data"));
+                assertTrue(output.contains("Error updating role data"));
+            }
         }
     }
 
@@ -260,20 +341,24 @@ class RoleCommandsTest {
             String roleName = "Viewer";
             Role role = new Role(roleName, "Viewer role", new HashSet<>());
 
-            when(scanner.nextLine())
-                    .thenReturn(roleName)
-                    .thenReturn("y");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                mockedUtils.when(() -> ConsoleUtils.promptYesNo(eq(scanner), eq("Confirm role deletion? (y/n): ")))
+                        .thenReturn(true);
 
-            when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
-            when(assignmentManager.findByRole(role)).thenReturn(Collections.emptyList());
+                when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
+                when(assignmentManager.findByRole(role)).thenReturn(Collections.emptyList());
+                when(roleManager.remove(role)).thenReturn(true);
 
-            parser.parseAndExecute("role-delete", scanner, system);
+                parser.parseAndExecute("role-delete", scanner, system);
 
-            String output = outContent.toString();
+                String output = outContent.toString();
 
-            verify(roleManager, times(1)).remove(role);
-            verify(assignmentManager, times(1)).findByRole(role);
-            assertTrue(output.contains("Role have been successfully deleted"));
+                verify(roleManager, times(1)).remove(role);
+                verify(assignmentManager, times(1)).findByRole(role);
+                assertTrue(output.contains("Role have been successfully deleted"));
+            }
         }
 
         @Test
@@ -282,17 +367,20 @@ class RoleCommandsTest {
             String roleName = "Viewer";
             Role role = createTestRole(roleName, "Viewer role", new HashSet<>());
 
-            when(scanner.nextLine())
-                    .thenReturn(roleName)
-                    .thenReturn("n");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                mockedUtils.when(() -> ConsoleUtils.promptYesNo(eq(scanner), eq("Confirm role deletion? (y/n): ")))
+                        .thenReturn(false);
 
-            when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
+                when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
 
-            parser.parseAndExecute("role-delete", scanner, system);
+                parser.parseAndExecute("role-delete", scanner, system);
 
-            verify(roleManager, never()).remove(any());
-            String output = outContent.toString();
-            assertTrue(output.contains("Canceling role deletion"));
+                verify(roleManager, never()).remove(any());
+                String output = outContent.toString();
+                assertTrue(output.contains("Canceling role deletion"));
+            }
         }
 
         @Test
@@ -305,20 +393,41 @@ class RoleCommandsTest {
             AssignmentMetadata metadata = AssignmentMetadata.now("system", "test");
             RoleAssignment assignment = new PermanentAssignment(user, role, metadata);
 
-            when(scanner.nextLine())
-                    .thenReturn(roleName)
-                    .thenReturn("y");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                mockedUtils.when(() -> ConsoleUtils.promptYesNo(eq(scanner), eq("Confirm role deletion? (y/n): ")))
+                        .thenReturn(true);
 
-            when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
-            when(assignmentManager.findByRole(role)).thenReturn(List.of(assignment));
-            when(roleManager.remove(role)).thenReturn(false);
+                when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
+                when(assignmentManager.findByRole(role)).thenReturn(List.of(assignment));
+                when(roleManager.remove(role)).thenReturn(false);
 
-            parser.parseAndExecute("role-delete", scanner, system);
-            String output = outContent.toString();
+                parser.parseAndExecute("role-delete", scanner, system);
+                String output = outContent.toString();
 
-            verify(roleManager, times(1)).remove(role);
-            assertTrue(output.contains("is assigned to users"));
-            assertTrue(output.contains(user.format()));
+                verify(roleManager, times(1)).remove(role);
+                assertTrue(output.contains("is assigned to users"));
+                assertTrue(output.contains(user.format()));
+            }
+        }
+
+        @Test
+        @DisplayName("Обработка отсутствия роли")
+        void shouldHandleRoleNotFound() {
+            String roleName = "NonExistentRole";
+
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                when(roleManager.findByName(roleName)).thenReturn(Optional.empty());
+
+                parser.parseAndExecute("role-delete", scanner, system);
+                String output = outContent.toString();
+
+                verify(roleManager, never()).remove(any());
+                assertTrue(output.contains("Role with name 'NonExistentRole' not found"));
+            }
         }
     }
 
@@ -329,34 +438,43 @@ class RoleCommandsTest {
         @Test
         @DisplayName("Добавление права к роли")
         void shouldAddPermissionToRole() {
-            when(scanner.nextLine())
-                    .thenReturn("Admin")
-                    .thenReturn("READ")
-                    .thenReturn("users")
-                    .thenReturn("Can read users");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("Admin");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission name: ")))
+                        .thenReturn("READ");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission resource: ")))
+                        .thenReturn("users");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission description: ")))
+                        .thenReturn("Can read users");
 
-            parser.parseAndExecute("role-add-permission", scanner, system);
+                parser.parseAndExecute("role-add-permission", scanner, system);
 
-            verify(roleManager, times(1)).addPermissionToRole(eq("Admin"), any(Permission.class));
-            String output = outContent.toString();
-            assertTrue(output.contains("Permission has been successfully added to role"));
+                verify(roleManager, times(1)).addPermissionToRole(eq("Admin"), any(Permission.class));
+                String output = outContent.toString();
+                assertTrue(output.contains("Permission has been successfully added to role"));
+            }
         }
 
         @Test
         @DisplayName("Обработка ошибки добавления права")
         void shouldHandleErrors() {
-            when(scanner.nextLine())
-                    .thenReturn("Admin")
-                    .thenReturn("")
-                    .thenReturn("users")
-                    .thenReturn("Can read users");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("Admin");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission name: ")))
+                        .thenReturn(""); // Invalid permission name
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission resource: ")))
+                        .thenReturn("users");
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter permission description: ")))
+                        .thenReturn("Can read users");
 
-            parser.parseAndExecute("role-add-permission", scanner, system);
-            String output = outContent.toString();
+                parser.parseAndExecute("role-add-permission", scanner, system);
+                String output = outContent.toString();
 
-            assertTrue(output.contains("Error adding permission to role"));
-
-            verify(roleManager, never()).addPermissionToRole(anyString(), any(Permission.class));
+                assertTrue(output.contains("Error adding permission to role"));
+                verify(roleManager, never()).addPermissionToRole(anyString(), any(Permission.class));
+            }
         }
     }
 
@@ -367,25 +485,42 @@ class RoleCommandsTest {
         @Test
         @DisplayName("Удаление права из роли")
         void shouldRemovePermissionFromRole() {
-            String roleName = "Admin";
+            String roleName = "testRole";
             Permission perm1 = new Permission("READ", "users", "Can read users");
             Permission perm2 = new Permission("WRITE", "users", "Can write users");
-            Role role = createTestRole(roleName, "Admin role", Set.of(perm1, perm2));
+            Role role = createTestRole(roleName, "Test role", Set.of(perm1, perm2));
 
-            lenient().when(scanner.nextLine())
-                    .thenReturn(roleName)
-                    .thenReturn("");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                mockedUtils.when(() -> ConsoleUtils.promptInt(eq(scanner), eq("\nEnter permission number for deletion: "), eq(1), eq(2)))
+                        .thenReturn(1);
 
-            lenient().when(scanner.nextInt())
-                    .thenReturn(1);
+                when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
 
-            lenient().when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
+                parser.parseAndExecute("role-remove-permission", scanner, system);
 
-            parser.parseAndExecute("role-remove-permission", scanner, system);
+                verify(roleManager, times(1)).removePermissionFromRole(eq(roleName), any(Permission.class));
+                String output = outContent.toString();
+                assertTrue(output.contains("Permission has been successfully removed from role"));
+            }
+        }
 
-            verify(roleManager, times(1)).removePermissionFromRole(eq(roleName), any(Permission.class));
-            String output = outContent.toString();
-            assertTrue(output.contains("Permission has been successfully removed from role"));
+        @Test
+        @DisplayName("Запрет удаления прав у admin роли")
+        void shouldNotRemovePermissionFromAdminRole() {
+            String roleName = "admin";
+
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+
+                parser.parseAndExecute("role-remove-permission", scanner, system);
+                String output = outContent.toString();
+
+                assertTrue(output.contains("DON`T TOUCH ADMIN ROLE!"));
+                verify(roleManager, never()).removePermissionFromRole(any(), any());
+            }
         }
 
         @Test
@@ -394,15 +529,17 @@ class RoleCommandsTest {
             String roleName = "EmptyRole";
             Role role = createTestRole(roleName, "Empty role", new HashSet<>());
 
-            when(scanner.nextLine())
-                    .thenReturn(roleName);
-            when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn(roleName);
+                when(roleManager.findByName(roleName)).thenReturn(Optional.of(role));
 
-            parser.parseAndExecute("role-remove-permission", scanner, system);
-            String output = outContent.toString();
+                parser.parseAndExecute("role-remove-permission", scanner, system);
+                String output = outContent.toString();
 
-            assertTrue(output.contains("does not have any permissions"));
-            verify(roleManager, never()).removePermissionFromRole(any(), any());
+                assertTrue(output.contains("does not have any permissions"));
+                verify(roleManager, never()).removePermissionFromRole(any(), any());
+            }
         }
     }
 
@@ -413,84 +550,76 @@ class RoleCommandsTest {
         @Test
         @DisplayName("Поиск ролей по имени")
         void shouldSearchByNameContains() {
-            when(scanner.nextInt()).thenReturn(1);
-            when(scanner.nextLine())
-                    .thenReturn("")
-                    .thenReturn("Admin");
-
             Role role = createTestRole("Admin", "Admin role", new HashSet<>());
-            when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of(role));
 
-            parser.parseAndExecute("role-search", scanner, system);
-            String output = outContent.toString();
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptChoice(eq(scanner), eq("Select filter number: "), anyList()))
+                        .thenReturn(0); // by name (contains)
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("Admin");
+                when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of(role));
 
-            assertTrue(output.contains(role.format()));
+                parser.parseAndExecute("role-search", scanner, system);
+                String output = outContent.toString();
+
+                assertTrue(output.contains(role.format()));
+            }
         }
 
         @Test
         @DisplayName("Поиск ролей по праву")
         void shouldSearchByPermission() {
-            when(scanner.nextInt()).thenReturn(2);
-            when(scanner.nextLine())
-                    .thenReturn("")
-                    .thenReturn("READ users");
-
             Role role = createTestRole("Admin", "Admin role", new HashSet<>());
-            when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of(role));
 
-            parser.parseAndExecute("role-search", scanner, system);
-            String output = outContent.toString();
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptChoice(eq(scanner), eq("Select filter number: "), anyList()))
+                        .thenReturn(1); // by permission
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner),
+                                eq("Enter permission name and permission resource by space: ")))
+                        .thenReturn("READ users");
+                when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of(role));
 
-            assertTrue(output.contains(role.format()));
+                parser.parseAndExecute("role-search", scanner, system);
+                String output = outContent.toString();
+
+                assertTrue(output.contains(role.format()));
+            }
         }
 
         @Test
         @DisplayName("Поиск ролей по минимальному количеству прав")
         void shouldSearchByMinPermissions() {
-            when(scanner.nextInt())
-                    .thenReturn(3)
-                    .thenReturn(2);
-
-            when(scanner.nextLine())
-                    .thenReturn("")
-                    .thenReturn("");
-
             Role role = createTestRole("Admin", "Admin role", new HashSet<>());
-            when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of(role));
 
-            parser.parseAndExecute("role-search", scanner, system);
-            String output = outContent.toString();
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptChoice(eq(scanner), eq("Select filter number: "), anyList()))
+                        .thenReturn(2); // by minimal permissions count
+                mockedUtils.when(() -> ConsoleUtils.promptInt(eq(scanner), eq("Enter permissions count : "), eq(0), eq(999)))
+                        .thenReturn(2);
+                when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of(role));
 
-            assertTrue(output.contains(role.format()));
+                parser.parseAndExecute("role-search", scanner, system);
+                String output = outContent.toString();
+
+                assertTrue(output.contains(role.format()));
+            }
         }
 
         @Test
-        @DisplayName("Обработка отсутствия ролей")
+        @DisplayName("Обработка отсутствия результатов поиска")
         void shouldShowMissingWhenNoRolesFound() {
-            when(scanner.nextInt()).thenReturn(1);
-            when(scanner.nextLine())
-                    .thenReturn("")
-                    .thenReturn("nonexistent");
+            try (MockedStatic<ConsoleUtils> mockedUtils = mockStatic(ConsoleUtils.class)) {
+                mockedUtils.when(() -> ConsoleUtils.promptChoice(eq(scanner), eq("Select filter number: "), anyList()))
+                        .thenReturn(0); // by name
+                mockedUtils.when(() -> ConsoleUtils.promptString(eq(scanner), eq("Enter role name: ")))
+                        .thenReturn("nonexistent");
+                when(roleManager.findByFilter(any(RoleFilter.class))).thenReturn(List.of());
 
-            when(roleManager.findByFilter(any())).thenReturn(List.of());
+                parser.parseAndExecute("role-search", scanner, system);
+                String output = outContent.toString();
 
-            parser.parseAndExecute("role-search", scanner, system);
-            String output = outContent.toString();
-
-            assertTrue(output.contains("missing"));
-        }
-
-        @Test
-        @DisplayName("Отмена поиска ролей")
-        void shouldCancelOnInvalidFilterNumber() {
-            when(scanner.nextInt()).thenReturn(99);
-            when(scanner.nextLine()).thenReturn("");
-
-            parser.parseAndExecute("role-search", scanner, system);
-            String output = outContent.toString();
-
-            assertTrue(output.contains("Cancelling"));
-            verify(roleManager, never()).findByFilter(any());
+                assertTrue(output.contains("missing"));
+            }
         }
     }
 }

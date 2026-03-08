@@ -6,6 +6,8 @@ build/
 .kotlin
 
 rbac-data/
+rbac-log/
+rbac-reports/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

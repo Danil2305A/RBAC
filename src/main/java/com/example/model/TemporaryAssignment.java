@@ -2,15 +2,15 @@ package com.example.model;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+
+import static com.example.util.DateTimeUtils.getCurrentDateTime;
+import static com.example.util.DateTimeUtils.isBefore;
+import static com.example.util.ValidationUtils.DATE_TIME_FORMATTER;
+import static com.example.util.ValidationUtils.validateExpirationDate;
 
 public class TemporaryAssignment extends AbstractRoleAssignment {
     private String expiresAt;
     private boolean autoRenew;
-
-    private static final DateTimeFormatter FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX");
 
     public TemporaryAssignment(User user, Role role, AssignmentMetadata metadata,
                                String expiresAt, boolean autoRenew) {
@@ -25,20 +25,8 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         super();
     }
 
-    private void validateExpirationDate(String expirationDate) {
-        if (expirationDate == null || expirationDate.isBlank()) {
-            throw new IllegalArgumentException("expiration date must not be null or blank");
-        }
-
-        try {
-            ZonedDateTime.parse(expirationDate, FORMATTER);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("expiration date must be in format: yyyy-MM-dd HH:mm:ss XXX", e);
-        }
-    }
-
     public void revoke() {
-        expiresAt = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX"));
+        expiresAt = getCurrentDateTime();
     }
 
     public String getExpiresAt() {
@@ -50,6 +38,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
     }
 
     public void setExpiresAt(String expiresAt) {
+        validateExpirationDate(expiresAt);
         this.expiresAt = expiresAt;
     }
 
@@ -82,16 +71,13 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
     }
 
     public boolean isExpired() {
-        return isExpired(ZonedDateTime.now().format(FORMATTER));
+        return isExpired(getCurrentDateTime());
     }
 
     public boolean isExpired(String dateTimeToCompare) {
         validateExpirationDate(dateTimeToCompare);
 
-        ZonedDateTime zonedDateTimeToCompare = ZonedDateTime.parse(dateTimeToCompare, FORMATTER);
-        ZonedDateTime expiryDateTime = ZonedDateTime.parse(expiresAt, FORMATTER);
-
-        return !zonedDateTimeToCompare.isBefore(expiryDateTime);
+        return !isBefore(dateTimeToCompare, expiresAt);
     }
 
     public String getTimeRemaining() {
@@ -100,7 +86,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         }
 
         ZonedDateTime nowDateTime = ZonedDateTime.now();
-        ZonedDateTime expiryDateTime = ZonedDateTime.parse(expiresAt, FORMATTER);
+        ZonedDateTime expiryDateTime = ZonedDateTime.parse(expiresAt, DATE_TIME_FORMATTER);
 
         Duration duration = Duration.between(nowDateTime, expiryDateTime);
         long days = duration.toDays();

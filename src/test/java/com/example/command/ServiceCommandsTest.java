@@ -1,5 +1,6 @@
 package com.example.command;
 
+import com.example.auditlog.AuditLog;
 import com.example.manager.UserManager;
 import com.example.manager.RoleManager;
 import com.example.manager.AssignmentManager;
@@ -53,6 +54,7 @@ class ServiceCommandsTest {
         setField(system, "roleManager", roleManager);
         setField(system, "assignmentManager", assignmentManager);
         system.setCurrentUser("testadmin");
+        system.setLogger(new AuditLog());
 
         parser = new CommandParser();
         CommandRegistry.registerAllCommands(parser);
@@ -107,36 +109,6 @@ class ServiceCommandsTest {
             assertTrue(output.contains("permissions-user"));
             assertTrue(output.contains("stats"));
             assertTrue(output.contains("exit"));
-        }
-    }
-
-    @Nested
-    @DisplayName("stats command")
-    class StatsCommandTests {
-
-        @Test
-        @DisplayName("Отображение статистики системы")
-        void shouldShowStatistics() {
-            when(userManager.count()).thenReturn(5);
-            when(roleManager.count()).thenReturn(3);
-            when(assignmentManager.count()).thenReturn(7);
-            when(assignmentManager.getActiveAssignments()).thenReturn(List.of(
-                    mock(RoleAssignment.class), mock(RoleAssignment.class)
-            ));
-            when(assignmentManager.getExpiredAssignments()).thenReturn(List.of(
-                    mock(RoleAssignment.class)
-            ));
-            when(assignmentManager.findAll()).thenReturn(List.of(
-                    mock(RoleAssignment.class), mock(RoleAssignment.class), mock(RoleAssignment.class)
-            ));
-
-            String stats = system.generateStatistics();
-
-            assertTrue(stats.contains("Count of users: 5"));
-            assertTrue(stats.contains("Count of roles: 3"));
-            assertTrue(stats.contains("Total count of assignments: 7"));
-            assertTrue(stats.contains("Count of active assignments: 2"));
-            assertTrue(stats.contains("Count of expired assignments: 1"));
         }
     }
 

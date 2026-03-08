@@ -5,13 +5,10 @@ import com.example.model.RoleAssignment;
 import com.example.model.TemporaryAssignment;
 import com.example.model.User;
 
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import static com.example.util.DateTimeUtils.isAfter;
+import static com.example.util.DateTimeUtils.isBefore;
 
 public class AssignmentFilters {
-    private static final DateTimeFormatter FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX");
-
     public static AssignmentFilter byUser(User user) {
         return assignment -> assignment.user().equals(user);
     }
@@ -47,22 +44,13 @@ public class AssignmentFilters {
     }
 
     public static AssignmentFilter assignedAfter(String date) {
-        ZonedDateTime dateTimeForCompare = ZonedDateTime.parse(date, FORMATTER);
-
-        return assignment -> {
-            ZonedDateTime assignedDateTime = ZonedDateTime.parse(assignment.metadata().assignedAt(), FORMATTER);
-            return assignedDateTime.isAfter(dateTimeForCompare);
-        };
+        return assignment -> isAfter(assignment.metadata().assignedAt(), date);
     }
 
     public static AssignmentFilter expiringBefore(String date) {
-        ZonedDateTime dateTimeForCompare = ZonedDateTime.parse(date, FORMATTER);
-
         return assignment -> {
             TemporaryAssignment temporaryAssignment = (TemporaryAssignment)assignment;
-            ZonedDateTime expiringDateTime = ZonedDateTime.parse(temporaryAssignment.getExpiresAt(), FORMATTER);
-
-            return expiringDateTime.isBefore(dateTimeForCompare);
+            return isBefore(temporaryAssignment.getExpiresAt(), date);
         };
     }
 }

@@ -1,8 +1,9 @@
 package com.example.command;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import com.example.exception.ResourceNotFoundException;
+import com.example.util.FormatUtils;
+
+import java.util.*;
 
 public class CommandParser {
     private final Map<String, Command> commands = new HashMap<>();
@@ -13,11 +14,11 @@ public class CommandParser {
         commandDescriptions.put(name, description);
     }
 
-    public void executeCommand(String commandName, Scanner scanner, RBACSystem system) {
+    public void executeCommand(String commandName, String[] args, Scanner scanner, RBACSystem system) {
         if (!commands.containsKey(commandName)) {
-            throw new IllegalArgumentException(String.format("command '%s' not found in command registry", commandName));
+            throw new ResourceNotFoundException(String.format("command '%s' not found in command registry", commandName));
         }
-        commands.get(commandName).execute(scanner, system);
+        commands.get(commandName).execute(args, scanner, system);
     }
 
     public void parseAndExecute(String input, Scanner scanner, RBACSystem system) {
@@ -25,14 +26,23 @@ public class CommandParser {
             throw new IllegalArgumentException("input must not be null or empty");
         }
 
-        String[] tokens = input.split("\\s+");
+        String[] tokens = input.split("\\s+", 2);
         String commandName = tokens[0];
-
-        executeCommand(commandName, scanner, system);
+        if (tokens.length == 1) {
+            executeCommand(commandName, null, scanner, system);
+        } else {
+            String[] args = tokens[1].split("\\s+");
+            executeCommand(commandName, args, scanner, system);
+        }
     }
 
     public void printHelp() {
-        commandDescriptions.forEach(
-                (name, description) -> System.out.printf("%s: %s\n", name, description));
+        String[] headers = {"Command", "Description"};
+        List<String[]> rows = new ArrayList<>();
+        new TreeMap<>(commandDescriptions)
+                .forEach((name, description) -> {
+                    rows.add(new String[]{name, description});
+                });
+        System.out.println(FormatUtils.formatTable(headers, rows));
     }
 }

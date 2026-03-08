@@ -1,6 +1,7 @@
 package com.example.manager;
 
 import com.example.exception.DuplicatedResourceException;
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.User;
 import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
@@ -76,7 +77,7 @@ public class UserManager implements Repository<User> {
 
     public void update(String username, String newFullName, String newEmail) {
         if (!exists(username)) {
-            throw new IllegalArgumentException("user with username '" + username + "' not found");
+            throw new ResourceNotFoundException("user", "username", username);
         }
 
         User updatedUser = User.validate(username, newFullName, newEmail);
