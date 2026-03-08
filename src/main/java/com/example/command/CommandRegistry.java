@@ -28,27 +28,31 @@ public class CommandRegistry {
     }
 
     private static void registerUserCommands(CommandParser parser) {
-        parser.registerCommand("user-list", "List of all users",
-                (scanner, system) -> {
-                    List<User> users = system.getUserManager().findAll();
-                    if (users.isEmpty()) {
-                        System.out.println("Missing users");
-                        return;
-                    }
-                    String[] headers = {"Username", "Full name", "Email"};
-                    List<String[]> rows = users.stream()
-                            .map(user -> new String[]{
-                                    user.username(),
-                                    user.fullName(),
-                                    user.email()
-                            })
-                            .collect(Collectors.toList());
+        parser.registerCommand("user-list", "List of all users (you can use option 'filter')",
+                (args,scanner, system) -> {
+                    if (args != null && args[0].toLowerCase().contains("filter")) {
+                        parser.executeCommand("user-search", args, scanner, system);
+                    } else {
+                        List<User> users = system.getUserManager().findAll();
+                        if (users.isEmpty()) {
+                            System.out.println("Missing users");
+                            return;
+                        }
+                        String[] headers = {"Username", "Full name", "Email"};
+                        List<String[]> rows = users.stream()
+                                .map(user -> new String[]{
+                                        user.username(),
+                                        user.fullName(),
+                                        user.email()
+                                })
+                                .collect(Collectors.toList());
 
-                    System.out.println(FormatUtils.formatTable(headers, rows));
+                        System.out.println(FormatUtils.formatTable(headers, rows));
+                    }
                 });
 
         parser.registerCommand("user-create", "Create new user",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
                     String fullName = promptString(scanner, "Enter fullName: ");
                     String email = promptString(scanner, "Enter email: ");
@@ -73,7 +77,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("user-view", "Get user information",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
@@ -93,7 +97,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("user-update", "Update user data",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
                     String newFullName = promptString(scanner, "Enter new fullName: ");
                     String newEmail = promptString(scanner, "Enter new email: ");
@@ -109,7 +113,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("user-delete", "Delete user",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     boolean answer = promptYesNo(scanner, "Confirm user deletion? (y/n): ");
@@ -157,7 +161,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("user-search", "Search users by filters",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     List<String> options = List.of("by username (contains)",
                             "by email (contains)",
                             "by email domain",
@@ -186,27 +190,31 @@ public class CommandRegistry {
     }
 
     private static void registerRoleCommands(CommandParser parser) {
-        parser.registerCommand("role-list", "List of all roles",
-                (scanner, system) -> {
-                    List<Role> roles = system.getRoleManager().findAll();
-                    if (roles.isEmpty()) {
-                        System.out.println("Missing roles");
-                        return;
-                    }
+        parser.registerCommand("role-list", "List of all roles (you can use option 'filter')",
+                (args,scanner, system) -> {
+                    if (args != null && args[0].toLowerCase().contains("filter")) {
+                        parser.executeCommand("role-search", args, scanner, system);
+                    } else {
+                        List<Role> roles = system.getRoleManager().findAll();
+                        if (roles.isEmpty()) {
+                            System.out.println("Missing roles");
+                            return;
+                        }
 
-                    String[] headers = {"ID", "Name", "Permission count"};
-                    List<String[]> rows = roles.stream()
-                            .map(role -> new String[]{
-                                    role.getId(),
-                                    role.getName(),
-                                    String.valueOf(role.getPermissions().size())
-                            })
-                            .collect(Collectors.toList());
-                    System.out.println(FormatUtils.formatTable(headers, rows));
+                        String[] headers = {"ID", "Name", "Permission count"};
+                        List<String[]> rows = roles.stream()
+                                .map(role -> new String[]{
+                                        role.getId(),
+                                        role.getName(),
+                                        String.valueOf(role.getPermissions().size())
+                                })
+                                .collect(Collectors.toList());
+                        System.out.println(FormatUtils.formatTable(headers, rows));
+                    }
                 });
 
         parser.registerCommand("role-create", "Create new role",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
 
                     if (roleName.toLowerCase().contains("admin")) {
@@ -264,7 +272,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("role-view", "Get role information",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
 
                     Optional<Role> role = system.getRoleManager().findByName(roleName);
@@ -276,7 +284,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("role-update", "Update role data",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
                     String newRoleName = promptString(scanner, "Enter new role name: ");
 
@@ -297,7 +305,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("role-delete", "Delete role",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
 
                     Optional<Role> role = system.getRoleManager().findByName(roleName);
@@ -336,7 +344,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("role-add-permission", "Add permission to role",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
                     String name = promptString(scanner, "Enter permission name: ");
                     String resource = promptString(scanner, "Enter permission resource: ");
@@ -354,7 +362,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("role-remove-permission", "Remove permission from role",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
 
                     if (roleName.toLowerCase().contains("admin")) {
@@ -389,7 +397,7 @@ public class CommandRegistry {
         );
 
         parser.registerCommand("role-search", "Search roles by filters",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     List<String> options = List.of("by name (contains)",
                             "by permission",
                             "by minimal permissions count");
@@ -426,7 +434,7 @@ public class CommandRegistry {
 
     private static void registerAssignmentCommands(CommandParser parser) {
         parser.registerCommand("assign-role", "Assign role for user",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
@@ -511,7 +519,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("revoke-role", "Revoke role from user",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
@@ -567,29 +575,33 @@ public class CommandRegistry {
                     System.out.println("Role has been successfully revoked from user");
                 });
 
-        parser.registerCommand("assignment-list", "List of all assignments",
-                (scanner, system) -> {
-                    List<RoleAssignment> assignments = system.getAssignmentManager().findAll();
-                    if (assignments.isEmpty()) {
-                        System.out.println("missing");
-                        return;
-                    }
+        parser.registerCommand("assignment-list", "List of all assignments (you can use option 'filter')",
+                (args,scanner, system) -> {
+                    if (args != null && args[0].toLowerCase().contains("filter")) {
+                        parser.executeCommand("assignment-search", args, scanner, system);
+                    } else {
+                        List<RoleAssignment> assignments = system.getAssignmentManager().findAll();
+                        if (assignments.isEmpty()) {
+                            System.out.println("missing");
+                            return;
+                        }
 
-                    String[] headers = {"Username", "Role name", "Type", "Status", "Assigned at"};
-                    List<String[]> rows = assignments.stream()
-                            .map(assignment -> new String[]{
-                                    assignment.user().username(),
-                                    assignment.role().getName(),
-                                    assignment.assignmentType(),
-                                    assignment.isActive() ? "ACTIVE" : "NOT ACTIVE",
-                                    assignment.metadata().assignedAt()
-                            })
-                            .collect(Collectors.toList());
-                    System.out.println(FormatUtils.formatTable(headers, rows));
+                        String[] headers = {"Username", "Role name", "Type", "Status", "Assigned at"};
+                        List<String[]> rows = assignments.stream()
+                                .map(assignment -> new String[]{
+                                        assignment.user().username(),
+                                        assignment.role().getName(),
+                                        assignment.assignmentType(),
+                                        assignment.isActive() ? "ACTIVE" : "NOT ACTIVE",
+                                        assignment.metadata().assignedAt()
+                                })
+                                .collect(Collectors.toList());
+                        System.out.println(FormatUtils.formatTable(headers, rows));
+                    }
                 });
 
         parser.registerCommand("assignment-list-user", "List of all assignments for user",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
@@ -611,7 +623,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("assignment-list-role", "List of all assignments for role",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String roleName = promptString(scanner, "Enter role name: ");
 
                     Optional<Role> role = system.getRoleManager().findByName(roleName);
@@ -634,7 +646,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("assignment-active", "List of all active assignments",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     List<RoleAssignment> assignments = system.getAssignmentManager().getActiveAssignments();
 
                     if (assignments.isEmpty()) {
@@ -649,7 +661,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("assignment-expired", "List of all expired temporary assignments",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     List<RoleAssignment> assignments = system.getAssignmentManager().getExpiredAssignments()
                             .stream().filter(assignment -> assignment.assignmentType().equals("TEMPORARY"))
                             .toList();
@@ -666,7 +678,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("assignment-extend", "Extend temporary assignment",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     List<RoleAssignment> assignments = system.getAssignmentManager()
                             .findByFilter(AssignmentFilters.byType("TEMPORARY"));
 
@@ -696,7 +708,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("assignment-search", "Search assignments by filters",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     List<String> options = List.of("by username",
                             "by roleName",
                             "by assignment type (PERMANENT / TEMPORARY)",
@@ -736,7 +748,7 @@ public class CommandRegistry {
 
     private static void registerPermissionCommands(CommandParser parser) {
         parser.registerCommand("permissions-user", "All permissions of specific user",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
@@ -771,7 +783,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("permissions-check", "Check if user has specific permission",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String username = promptString(scanner, "Enter username: ");
 
                     Optional<User> user = system.getUserManager().findByUsername(username);
@@ -803,34 +815,34 @@ public class CommandRegistry {
 
     private static void registerServiceCommands(CommandParser parser) {
         parser.registerCommand("help", "List of available commands",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     parser.printHelp();
                 });
 
         parser.registerCommand("stats", "System statistics",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     System.out.println(system.generateStatistics());
                 });
 
         parser.registerCommand("audit-logs", "Audit logs",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     system.getLogger().printLogs();
                 });
 
         parser.registerCommand("clear", "Clear screen",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     System.out.print("\033[H\033[2J");
                     System.out.flush();
                 });
 
         parser.registerCommand("exit", "Exiting the program",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     boolean answer1 = promptYesNo(scanner, "Confirm exiting the program? (y/n): ");
                     if (answer1) {
                         boolean answer2 = promptYesNo(scanner, "Save data? (y/n): ");
 
                         if (answer2) {
-                            parser.executeCommand("save", scanner, system);
+                            parser.executeCommand("save", args, scanner, system);
                         }
 
                         system.getLogger().saveToFile("rbac-log/log.txt");
@@ -842,7 +854,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("save", "Save data to JSON file",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     String filepath = "rbac-data/data.json";
                     Path path = Paths.get(filepath);
 
@@ -876,7 +888,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("report-users", "Generate user report (users and their active roles)",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     ReportGenerator reportGenerator = new ReportGenerator();
 
                     String filepath = "rbac-reports/users.txt";
@@ -895,7 +907,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("report-roles", "Generate role report (roles and user counts)",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     ReportGenerator reportGenerator = new ReportGenerator();
 
                     String filepath = "rbac-reports/roles.txt";
@@ -914,7 +926,7 @@ public class CommandRegistry {
                 });
 
         parser.registerCommand("report-matrix", "Generate permission matrix (users × resources)",
-                (scanner, system) -> {
+                (args,scanner, system) -> {
                     ReportGenerator reportGenerator = new ReportGenerator();
 
                     String filepath = "rbac-reports/permission_matrix.txt";
