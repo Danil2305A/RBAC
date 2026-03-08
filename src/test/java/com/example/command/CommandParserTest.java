@@ -37,11 +37,11 @@ class CommandParserTest {
         @Test
         @DisplayName("Успешная регистрация команды")
         void shouldRegisterCommand() {
-            Command testCommand = (s, sys) -> System.out.println("test executed");
+            Command testCommand = (args,s, sys) -> System.out.println("test executed");
 
             parser.registerCommand("test", "Test command", testCommand);
 
-            assertDoesNotThrow(() -> parser.executeCommand("test", scanner, system));
+            assertDoesNotThrow(() -> parser.executeCommand("test", null, scanner, system));
         }
 
         @Test
@@ -49,7 +49,7 @@ class CommandParserTest {
         void shouldThrowExceptionForUnregisteredCommand() {
             ResourceNotFoundException exception = assertThrows(
                     ResourceNotFoundException.class,
-                    () -> parser.executeCommand("unknown", scanner, system)
+                    () -> parser.executeCommand("unknown",null, scanner, system)
             );
 
             assertEquals("command 'unknown' not found in command registry", exception.getMessage());
@@ -66,9 +66,9 @@ class CommandParserTest {
             Command mockCommand = mock(Command.class);
             parser.registerCommand("test", "Test command", mockCommand);
 
-            parser.executeCommand("test", scanner, system);
+            parser.executeCommand("test", null, scanner, system);
 
-            verify(mockCommand, times(1)).execute(scanner, system);
+            verify(mockCommand, times(1)).execute(null, scanner, system);
         }
 
         @Test
@@ -79,7 +79,7 @@ class CommandParserTest {
 
             parser.parseAndExecute("test", scanner, system);
 
-            verify(mockCommand, times(1)).execute(scanner, system);
+            verify(mockCommand, times(1)).execute(null,scanner, system);
         }
 
         @Test
