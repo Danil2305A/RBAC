@@ -15,6 +15,9 @@ public class Main {
         CommandRegistry.registerAllCommands(parser);
 
         Scanner scanner = new Scanner(System.in);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(system::shutdown));
+
         while (true) {
             System.out.print("\nEnter the command: ");
             try {

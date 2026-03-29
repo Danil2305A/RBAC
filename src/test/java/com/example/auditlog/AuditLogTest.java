@@ -26,11 +26,23 @@ class AuditLogTest {
     @AfterEach
     void tearDown() {
         System.setOut(originalOut);
+        // Завершаем работу AuditLog, чтобы поток-обработчик завершился
+        auditLog.shutdown();
+    }
+
+    private void waitForLogProcessing() {
+        try {
+            // Даём время на обработку записей в отдельном потоке
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
     @DisplayName("Получение всех логов при их отсутствии")
     void getAll_ShouldReturnEmptyList_WhenNoEntries() {
+        waitForLogProcessing();
         List<AuditEntry> entries = auditLog.getAll();
         assertTrue(entries.isEmpty());
     }
@@ -40,6 +52,7 @@ class AuditLogTest {
     void getAll_ShouldReturnAllEntries_WhenEntriesExist() {
         auditLog.log("LOGIN", "john.doe", "System", null);
         auditLog.log("LOGOUT", "john.doe", "System", "Session ended");
+        waitForLogProcessing();
 
         List<AuditEntry> entries = auditLog.getAll();
 
@@ -52,6 +65,7 @@ class AuditLogTest {
     @DisplayName("Получение всех несуществующих логов по performer")
     void getByPerformer_ShouldReturnEmptyList_WhenNoEntriesForPerformer() {
         auditLog.log("LOGIN", "john.doe", "System", null);
+        waitForLogProcessing();
 
         List<AuditEntry> entries = auditLog.getByPerformer("jane.doe");
 
@@ -64,6 +78,7 @@ class AuditLogTest {
         auditLog.log("LOGIN", "john.doe", "System", null);
         auditLog.log("LOGOUT", "john.doe", "System", "Session ended");
         auditLog.log("LOGIN", "jane.doe", "System", null);
+        waitForLogProcessing();
 
         List<AuditEntry> entries = auditLog.getByPerformer("john.doe");
 
@@ -75,6 +90,7 @@ class AuditLogTest {
     @DisplayName("Получение всех несуществующих логов по action")
     void getByAction_ShouldReturnEmptyList_WhenNoEntriesForAction() {
         auditLog.log("LOGIN", "john.doe", "System", null);
+        waitForLogProcessing();
 
         List<AuditEntry> entries = auditLog.getByAction("DELETE");
 
@@ -87,6 +103,7 @@ class AuditLogTest {
         auditLog.log("LOGIN", "john.doe", "System", null);
         auditLog.log("LOGOUT", "john.doe", "System", "Session ended");
         auditLog.log("LOGIN", "jane.doe", "System", null);
+        waitForLogProcessing();
 
         List<AuditEntry> entries = auditLog.getByAction("LOGIN");
 
@@ -98,6 +115,7 @@ class AuditLogTest {
     @DisplayName("Добавление лога")
     void log_ShouldAddEntryWithCurrentTimestamp() {
         auditLog.log("LOGIN", "john.doe", "System", "Test details");
+        waitForLogProcessing();
 
         List<AuditEntry> entries = auditLog.getAll();
 
@@ -113,6 +131,7 @@ class AuditLogTest {
     @Test
     @DisplayName("Вывод пустого списка логов")
     void printLogs_ShouldPrintMissingEntriesMessage_WhenNoEntries() {
+        waitForLogProcessing();
         auditLog.printLogs();
 
         String output = outputStreamCaptor.toString().trim();
@@ -123,6 +142,10 @@ class AuditLogTest {
     @DisplayName("Вывод всех логов")
     void printLogs_ShouldPrintFormattedTable_WhenEntriesExist() {
         auditLog.log("LOGIN", "john.doe", "System", "Test login");
+        waitForLogProcessing();
+
+        // Очищаем буфер перед printLogs
+        outputStreamCaptor.reset();
 
         auditLog.printLogs();
 
@@ -144,6 +167,7 @@ class AuditLogTest {
         Path filePath = tempDir.resolve("audit.log");
         auditLog.log("LOGIN", "john.doe", "System", "Test login");
         auditLog.log("LOGOUT", "john.doe", "System", "Test logout");
+        waitForLogProcessing();
 
         auditLog.saveToFile(filePath.toString());
 
@@ -159,6 +183,7 @@ class AuditLogTest {
     void saveToFile_ShouldCreateDirectories_WhenTheyDontExist(@TempDir Path tempDir) throws Exception {
         Path nestedPath = tempDir.resolve("logs/subdir/audit.log");
         auditLog.log("LOGIN", "john.doe", "System", "Test login");
+        waitForLogProcessing();
 
         auditLog.saveToFile(nestedPath.toString());
 
@@ -173,6 +198,8 @@ class AuditLogTest {
         Files.write(filePath, List.of("old content"));
 
         auditLog.log("LOGIN", "john.doe", "System", "Test login");
+        waitForLogProcessing();
+
         auditLog.saveToFile(filePath.toString());
 
         List<String> lines = Files.readAllLines(filePath);
@@ -186,6 +213,7 @@ class AuditLogTest {
         Path invalidPath = Paths.get("/invalid/path/that/does/not/exist/audit.log");
 
         auditLog.log("LOGIN", "john.doe", "System", "Test login");
+        waitForLogProcessing();
 
         assertDoesNotThrow(() -> auditLog.saveToFile(invalidPath.toString()));
 
