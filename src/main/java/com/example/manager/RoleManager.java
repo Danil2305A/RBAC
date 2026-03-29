@@ -8,10 +8,13 @@ import com.example.filter.RoleFilter;
 import com.example.filter.RoleFilters;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class RoleManager implements Repository<Role> {
-    private final Map<String, Role> rolesWithIdKey = new HashMap<>();
-    private final Map<String, Role> rolesWithNameKey = new HashMap<>();
+    private final Map<String, Role> rolesWithIdKey = new ConcurrentHashMap<>();
+    private final Map<String, Role> rolesWithNameKey = new ConcurrentHashMap<>();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     private AssignmentManager assignmentManager;
 
@@ -25,8 +28,13 @@ public class RoleManager implements Repository<Role> {
     @Override
     public void add(Role role) {
         if (role != null) {
-            rolesWithIdKey.put(role.getId(), role);
-            rolesWithNameKey.put(role.getName(), role);
+            lock.writeLock().lock();
+            try {
+                rolesWithIdKey.put(role.getId(), role);
+                rolesWithNameKey.put(role.getName(), role);
+            } finally {
+                lock.writeLock().unlock();
+            }
         }
     }
 
@@ -45,96 +53,162 @@ public class RoleManager implements Repository<Role> {
             return false;
         }
 
-        role.getUsedNames().remove(role.getName());
-
-        return rolesWithIdKey.remove(role.getId(), role) &&
-                rolesWithNameKey.remove(role.getName(), role);
+        lock.writeLock().lock();
+        try {
+            role.getUsedNames().remove(role.getName());
+            return rolesWithIdKey.remove(role.getId(), role) && rolesWithNameKey.remove(role.getName(), role);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public Optional<Role> findById(String id) {
-        return Optional.ofNullable(rolesWithIdKey.get(id));
+        lock.readLock().lock();
+        try {
+            return Optional.ofNullable(rolesWithIdKey.get(id));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public List<Role> findAll() {
-        return new ArrayList<>(rolesWithIdKey.values());
+        lock.readLock().lock();
+        try {
+            return new ArrayList<>(rolesWithIdKey.values());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public int count() {
-        return rolesWithIdKey.size();
+        lock.readLock().lock();
+        try {
+            return rolesWithIdKey.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public void clear() {
-        rolesWithIdKey.clear();
-        rolesWithNameKey.clear();
+        lock.writeLock().lock();
+        try {
+            rolesWithIdKey.clear();
+            rolesWithNameKey.clear();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public Optional<Role> findByName(String name) {
-        return Optional.ofNullable(rolesWithNameKey.get(name));
+        lock.readLock().lock();
+        try {
+            return Optional.ofNullable(rolesWithNameKey.get(name));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<Role> findByFilter(RoleFilter filter) {
-        return rolesWithIdKey.values().stream()
-                .filter(filter::test)
-                .toList();
+        lock.readLock().lock();
+        try {
+            return rolesWithIdKey.values().stream().filter(filter::test).toList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<Role> findAll(RoleFilter filter, Comparator<Role> sorter) {
-        return rolesWithIdKey.values().stream()
-                .filter(filter::test)
-                .sorted(sorter)
-                .toList();
+        lock.readLock().lock();
+        try {
+            return rolesWithIdKey.values().stream().filter(filter::test).sorted(sorter).toList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public boolean exists(String name) {
-        return name != null && rolesWithNameKey.containsKey(name.trim());
+        lock.readLock().lock();
+        try {
+            return name != null && rolesWithNameKey.containsKey(name.trim());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public void update(String roleName, String newRoleName, String newDescription) {
-        if (!exists(roleName)) {
-            throw new ResourceNotFoundException("role", "name", roleName);
+        lock.writeLock().lock();
+        try {
+            if (!exists(roleName)) {
+                throw new ResourceNotFoundException("role", "name", roleName);
+            }
+
+            Role updatingRole = rolesWithNameKey.get(roleName);
+
+            updatingRole.setName(newRoleName);
+            updatingRole.setDescription(newDescription);
+
+            rolesWithNameKey.remove(roleName);
+            add(updatingRole);
+        } finally {
+            lock.writeLock().unlock();
         }
-
-        Role updatingRole = rolesWithNameKey.get(roleName);
-
-        updatingRole.setName(newRoleName);
-        updatingRole.setDescription(newDescription);
-
-        rolesWithNameKey.remove(roleName);
-
-        add(updatingRole);
     }
 
     public void addPermissionToRole(String roleName, Permission permission) {
-        if (!exists(roleName)) {
-            throw new ResourceNotFoundException("role", "name", roleName);
+        lock.writeLock().lock();
+        try {
+            if (!exists(roleName)) {
+                throw new ResourceNotFoundException("role", "name", roleName);
+            }
+
+            Role existedRole = rolesWithNameKey.get(roleName);
+            existedRole.addPermission(permission);
+            rolesWithNameKey.put(roleName, existedRole);
+            rolesWithIdKey.put(existedRole.getId(), existedRole);
+        } finally {
+            lock.writeLock().unlock();
         }
-
-        Role existedRole = rolesWithNameKey.get(roleName);
-
-        existedRole.addPermission(permission);
-
-        rolesWithNameKey.put(roleName, existedRole);
-        rolesWithIdKey.put(existedRole.getId(), existedRole);
     }
 
     public void removePermissionFromRole(String roleName, Permission permission) {
-        if (!exists(roleName)) {
-            throw new ResourceNotFoundException("role", "name", roleName);
+        lock.writeLock().lock();
+        try {
+            if (!exists(roleName)) {
+                throw new ResourceNotFoundException("role", "name", roleName);
+            }
+
+            Role existedRole = rolesWithNameKey.get(roleName);
+            existedRole.removePermission(permission);
+            rolesWithNameKey.put(roleName, existedRole);
+            rolesWithIdKey.put(existedRole.getId(), existedRole);
+        } finally {
+            lock.writeLock().unlock();
         }
-
-        Role existedRole = rolesWithNameKey.get(roleName);
-
-        existedRole.removePermission(permission);
-
-        rolesWithNameKey.put(roleName, existedRole);
-        rolesWithIdKey.put(existedRole.getId(), existedRole);
     }
 
     public List<Role> findRolesWithPermission(String permissionName, String resourceName) {
         return findByFilter(RoleFilters.hasPermission(permissionName, resourceName));
+    }
+
+    public List<Role> findByFilterParallel(RoleFilter filter) {
+        lock.readLock().lock();
+        try {
+            return rolesWithIdKey.values().parallelStream().filter(filter::test).toList();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public List<Role> findAllParallel(RoleFilter filter, Comparator<Role> sorter) {
+        lock.readLock().lock();
+        try {
+            return rolesWithIdKey.values().parallelStream().filter(filter::test).sorted(sorter).toList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }
