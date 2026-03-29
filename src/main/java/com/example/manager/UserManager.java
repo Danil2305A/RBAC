@@ -7,16 +7,24 @@ import com.example.filter.UserFilter;
 import com.example.filter.UserFilters;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class UserManager implements Repository<User> {
-    private final Map<String, User> users = new HashMap<>();
+    private final Map<String, User> users = new ConcurrentHashMap<>();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Override
     public void add(User user) {
-        if (users.containsKey(user.username())) {
-            throw new DuplicatedResourceException("User", "username", user.username());
+        lock.writeLock().lock();
+        try {
+            if (users.containsKey(user.username())) {
+                throw new DuplicatedResourceException("User", "username", user.username());
+            }
+            users.put(user.username(), user);
+        } finally {
+            lock.writeLock().unlock();
         }
-        users.put(user.username(), user);
     }
 
     @Override
@@ -24,64 +32,142 @@ public class UserManager implements Repository<User> {
         if (user == null) {
             return false;
         }
-        return users.remove(user.username(), user);
+        lock.writeLock().lock();
+        try {
+            return users.remove(user.username(), user);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public Optional<User> findById(String id) {
-        return Optional.ofNullable(users.get(id)); // id как ключ???
+        lock.readLock().lock();
+        try {
+            return Optional.ofNullable(users.get(id));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(users.values());
+        lock.readLock().lock();
+        try {
+            return new ArrayList<>(users.values());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public int count() {
-        return users.size();
+        lock.readLock().lock();
+        try {
+            return users.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public void clear() {
-        users.clear();
+        lock.writeLock().lock();
+        try {
+            users.clear();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public Optional<User> findByUsername(String username) {
-        return Optional.ofNullable(users.get(username));
+        lock.readLock().lock();
+        try {
+            return Optional.ofNullable(users.get(username));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public Optional<User> findByEmail(String email) {
-        UserFilter userFilter = UserFilters.byEmail(email);
-        return users.values().stream()
-                .filter(userFilter::test)
-                .findFirst();
+        lock.readLock().lock();
+        try {
+            UserFilter userFilter = UserFilters.byEmail(email);
+            return users.values().stream()
+                    .filter(userFilter::test)
+                    .findFirst();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<User> findByFilter(UserFilter filter) {
-        return users.values().stream()
-                .filter(filter::test)
-                .toList();
+        lock.readLock().lock();
+        try {
+            return users.values().stream()
+                    .filter(filter::test)
+                    .toList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public List<User> findAll(UserFilter filter, Comparator<User> sorter) {
-        return users.values().stream()
-                .filter(filter::test)
-                .sorted(sorter)
-                .toList();
+        lock.readLock().lock();
+        try {
+            return users.values().stream()
+                    .filter(filter::test)
+                    .sorted(sorter)
+                    .toList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public boolean exists(String username) {
-        return username != null && users.containsKey(username.trim());
+        lock.readLock().lock();
+        try {
+            return username != null && users.containsKey(username.trim());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public void update(String username, String newFullName, String newEmail) {
-        if (!exists(username)) {
-            throw new ResourceNotFoundException("user", "username", username);
-        }
+        lock.writeLock().lock();
+        try {
+            if (!exists(username)) {
+                throw new ResourceNotFoundException("user", "username", username);
+            }
 
-        User updatedUser = User.validate(username, newFullName, newEmail);
-        users.put(username, updatedUser);
+            User updatedUser = User.validate(username, newFullName, newEmail);
+            users.put(username, updatedUser);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public List<User> findByFilterParallel(UserFilter filter) {
+        lock.readLock().lock();
+        try {
+            return users.values().parallelStream()
+                    .filter(filter::test)
+                    .toList();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public List<User> findAllParallel(UserFilter filter, Comparator<User> sorter) {
+        lock.readLock().lock();
+        try {
+            return users.values().parallelStream()
+                    .filter(filter::test)
+                    .sorted(sorter)
+                    .toList();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
