@@ -7,6 +7,9 @@ import com.example.manager.UserManager;
 import com.example.model.*;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class RBACSystem {
@@ -16,6 +19,8 @@ public class RBACSystem {
     private String currentUser;
 
     private AuditLog logger;
+
+    private ExecutorService executorService;
 
     public UserManager getUserManager() {
         return userManager;
@@ -37,6 +42,10 @@ public class RBACSystem {
         this.logger = logger;
     }
 
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
     public String getCurrentUser() {
         return currentUser;
     }
@@ -52,9 +61,12 @@ public class RBACSystem {
 
         logger = new AuditLog();
 
+        executorService = Executors.newFixedThreadPool(4);
+
         assignmentManager.setUserManager(userManager);
         assignmentManager.setRoleManager(roleManager);
         roleManager.setAssignmentManager(assignmentManager);
+
 
         Permission readUsersPermission= new Permission("READ", "users", "Can read users");
         Permission writeUsersPermission = new Permission("WRITE", "users", "Can edit users");
@@ -91,6 +103,20 @@ public class RBACSystem {
         assignmentManager.add(adminRoleAssignment);
 
         setCurrentUser(admin.username());
+    }
+
+    public void shutdown() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public String generateStatistics() {
