@@ -9,6 +9,7 @@ import com.example.model.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,9 @@ public class RBACSystem {
     private AuditLog logger;
 
     private ExecutorService executorService;
+
+    private ScheduledExecutorService scheduledExecutorService;
+    private volatile boolean scheduledTaskRunning = true;
 
     public UserManager getUserManager() {
         return userManager;
@@ -103,6 +107,8 @@ public class RBACSystem {
         assignmentManager.add(adminRoleAssignment);
 
         setCurrentUser(admin.username());
+
+        startScheduledTasks();
     }
 
     public void shutdown() {
@@ -116,6 +122,23 @@ public class RBACSystem {
                 executorService.shutdownNow();
                 Thread.currentThread().interrupt();
             }
+        }
+
+        if (scheduledExecutorService != null && !scheduledExecutorService.isShutdown()) {
+            scheduledTaskRunning = false;
+            scheduledExecutorService.shutdown();
+            try {
+                if (!scheduledExecutorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                    scheduledExecutorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduledExecutorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        if (logger != null) {
+            logger.shutdown();
         }
     }
 
@@ -155,5 +178,55 @@ public class RBACSystem {
         sb.append(String.format("Top 3 most popular roles:\n%s", popularRoles.isEmpty() ? "missing" : popularRoles));
 
         return sb.toString();
+    }
+
+    private void startScheduledTasks() {
+        scheduledExecutorService = Executors.newScheduledThreadPool(2);
+
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            try {
+                expireTemporaryAssignments();
+            } catch (Exception e) {
+                System.err.println("[ScheduledTask] Error expiring assignments: " + e.getMessage());
+            }
+        }, 10, 30, TimeUnit.SECONDS);
+
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            try {
+                logStatistics();
+            } catch (Exception e) {
+                System.err.println("[ScheduledTask] Error logging statistics: " + e.getMessage());
+            }
+        }, 15, 60, TimeUnit.SECONDS);
+    }
+
+    private void expireTemporaryAssignments() {
+        List<RoleAssignment> allAssignments = assignmentManager.findAll();
+        List<RoleAssignment> expiredTemporary = allAssignments.stream()
+                .filter(assignment -> assignment instanceof TemporaryAssignment)
+                .filter(assignment -> !assignment.isActive())
+                .toList();
+
+        if (!expiredTemporary.isEmpty()) {
+            for (RoleAssignment assignment : expiredTemporary) {
+                if (assignment instanceof TemporaryAssignment temp) {
+                    if (logger != null) {
+                        logger.log("expire-check", "scheduler",
+                                assignment.user().username(),
+                                "Temporary assignment expired for role: " + assignment.role().getName());
+                    }
+                }
+            }
+        }
+    }
+
+    private void logStatistics() {
+        String stats = generateStatistics();
+        if (logger != null) {
+            String[] lines = stats.split("\n");
+            for (String line : lines) {
+                logger.log("statistics", "scheduler", "system", line);
+            }
+        }
     }
 }
