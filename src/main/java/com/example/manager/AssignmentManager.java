@@ -8,12 +8,11 @@ import com.example.model.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class AssignmentManager implements Repository<RoleAssignment> {
-    private final Map<String, RoleAssignment> assignments = new ConcurrentHashMap<>();
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ConcurrentMap<String, RoleAssignment> assignments = new ConcurrentHashMap<>();
 
     private UserManager userManager;
     private RoleManager roleManager;
@@ -51,22 +50,20 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         AssignmentFilter assignmentFilterByRole = AssignmentFilters.byRole(assignment.role());
         AssignmentFilter assignmentFilterByActiveOnly = AssignmentFilters.activeOnly();
 
-        lock.writeLock().lock();
-        try {
-            boolean hasActiveDuplicate = assignments.values().stream()
-                    .filter(assignmentFilterByUser.and(assignmentFilterByRole)::test)
-                    .anyMatch(assignmentFilterByActiveOnly::test);
+        boolean hasActiveDuplicate = assignments.values().stream()
+                .filter(assignmentFilterByUser.and(assignmentFilterByRole)::test)
+                .anyMatch(assignmentFilterByActiveOnly::test);
 
-            if (hasActiveDuplicate) {
-                throw new DuplicatedResourceException(
-                        String.format("user '%s' already has active assignment for role '%s'",
-                                assignment.user().username(), assignment.role().getName())
-                );
-            }
+        if (hasActiveDuplicate) {
+            throw new DuplicatedResourceException(
+                    String.format("user '%s' already has active assignment for role '%s'",
+                            assignment.user().username(), assignment.role().getName())
+            );
+        }
 
-            assignments.put(assignment.assignmentId(), assignment);
-        } finally {
-            lock.writeLock().unlock();
+        RoleAssignment existing = assignments.putIfAbsent(assignment.assignmentId(), assignment);
+        if (existing != null) {
+            throw new DuplicatedResourceException("assignment", "id", assignment.assignmentId());
         }
     }
 
@@ -75,52 +72,29 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         if (assignment == null) {
             return false;
         }
-        lock.writeLock().lock();
-        try {
-            return assignments.remove(assignment.assignmentId(), assignment);
-        } finally {
-            lock.writeLock().unlock();
-        }
+
+        return assignments.remove(assignment.assignmentId(), assignment);
     }
 
     @Override
     public Optional<RoleAssignment> findById(String id) {
-        lock.readLock().lock();
-        try {
-            return Optional.ofNullable(assignments.get(id));
-        } finally {
-            lock.readLock().unlock();
-        }
+        return Optional.ofNullable(assignments.get(id));
     }
+
 
     @Override
     public List<RoleAssignment> findAll() {
-        lock.readLock().lock();
-        try {
-            return new ArrayList<>(assignments.values());
-        } finally {
-            lock.readLock().unlock();
-        }
+        return new ArrayList<>(assignments.values());
     }
 
     @Override
     public int count() {
-        lock.readLock().lock();
-        try {
-            return assignments.size();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return assignments.size();
     }
 
     @Override
     public void clear() {
-        lock.writeLock().lock();
-        try {
-            assignments.clear();
-        } finally {
-            lock.writeLock().unlock();
-        }
+        assignments.clear();
     }
 
     public List<RoleAssignment> findByUser(User user) {
@@ -128,14 +102,10 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             return Collections.emptyList();
         }
         AssignmentFilter assignmentFilterByUser = AssignmentFilters.byUser(user);
-        lock.readLock().lock();
-        try {
-            return assignments.values().stream()
-                    .filter(assignmentFilterByUser::test)
-                    .toList();
-        } finally {
-            lock.readLock().unlock();
-        }
+
+        return assignments.values().stream()
+                .filter(assignmentFilterByUser::test)
+                .toList();
     }
 
     public List<RoleAssignment> findByRole(Role role) {
@@ -143,38 +113,24 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             return Collections.emptyList();
         }
         AssignmentFilter assignmentFilterByRole = AssignmentFilters.byRole(role);
-        lock.readLock().lock();
-        try {
-            return assignments.values().stream()
-                    .filter(assignmentFilterByRole::test)
-                    .toList();
-        } finally {
-            lock.readLock().unlock();
-        }
+
+        return assignments.values().stream()
+                .filter(assignmentFilterByRole::test)
+                .toList();
     }
 
     public List<RoleAssignment> findByFilter(AssignmentFilter filter) {
-        lock.readLock().lock();
-        try {
-            return assignments.values().stream()
-                    .filter(filter::test)
-                    .collect(Collectors.toList());
-        } finally {
-            lock.readLock().unlock();
-        }
+        return assignments.values().stream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
     }
 
 
     public List<RoleAssignment> findAll(AssignmentFilter filter, Comparator<RoleAssignment> sorter) {
-        lock.readLock().lock();
-        try {
-            return assignments.values().stream()
-                    .filter(filter::test)
-                    .sorted(sorter)
-                    .toList();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return assignments.values().stream()
+                .filter(filter::test)
+                .sorted(sorter)
+                .toList();
     }
 
     public List<RoleAssignment> getActiveAssignments() {
@@ -191,15 +147,11 @@ public class AssignmentManager implements Repository<RoleAssignment> {
         }
         AssignmentFilter assignmentFilterByUser = AssignmentFilters.byUser(user);
         AssignmentFilter assignmentFilterByRole = AssignmentFilters.byRole(role);
-        lock.readLock().lock();
-        try {
-            return assignments.values().stream()
-                    .filter(RoleAssignment::isActive)
-                    .filter(assignmentFilterByUser::test)
-                    .anyMatch(assignmentFilterByRole::test);
-        } finally {
-            lock.readLock().unlock();
-        }
+
+        return assignments.values().stream()
+                .filter(RoleAssignment::isActive)
+                .filter(assignmentFilterByUser::test)
+                .anyMatch(assignmentFilterByRole::test);
     }
 
     public boolean userHasPermission(User user, String permissionName, String resourceName) {
@@ -216,68 +168,44 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             return Collections.emptySet();
         }
         AssignmentFilter assignmentFilterByUser = AssignmentFilters.byUser(user);
-        lock.readLock().lock();
-        try {
-            return assignments.values().stream()
-                    .filter(RoleAssignment::isActive)
-                    .filter(assignmentFilterByUser::test)
-                    .flatMap(assignment -> assignment.role().getPermissions().stream())
-                    .collect(Collectors.toSet());
-        } finally {
-            lock.readLock().unlock();
-        }
+
+        return assignments.values().stream()
+                .filter(RoleAssignment::isActive)
+                .filter(assignmentFilterByUser::test)
+                .flatMap(assignment -> assignment.role().getPermissions().stream())
+                .collect(Collectors.toSet());
     }
 
     public void revokeAssignment(String assignmentId) {
-        lock.writeLock().lock();
-        try {
-            RoleAssignment assignment = findById(assignmentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("assignment", "id", assignmentId));
+        RoleAssignment assignment = findById(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("assignment", "id", assignmentId));
 
-            if (assignment instanceof PermanentAssignment) {
-                ((PermanentAssignment) assignment).revoke();
-            } else if (assignment instanceof TemporaryAssignment) {
-                ((TemporaryAssignment) assignment).revoke();
-            }
-        } finally {
-            lock.writeLock().unlock();
+        if (assignment instanceof PermanentAssignment) {
+            ((PermanentAssignment) assignment).revoke();
+        } else if (assignment instanceof TemporaryAssignment) {
+            ((TemporaryAssignment) assignment).revoke();
         }
     }
 
     public void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
-        lock.writeLock().lock();
-        try {
-            RoleAssignment assignment = findById(assignmentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("assignment", "id", assignmentId));
+        RoleAssignment assignment = findById(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("assignment", "id", assignmentId));
 
-            if (assignment instanceof TemporaryAssignment temporaryAssignment) {
-                temporaryAssignment.extend(newExpirationDate);
-            }
-        } finally {
-            lock.writeLock().unlock();
+        if (assignment instanceof TemporaryAssignment temporaryAssignment) {
+            temporaryAssignment.extend(newExpirationDate);
         }
     }
 
     public List<RoleAssignment> findByFilterParallel(AssignmentFilter filter) {
-        lock.readLock().lock();
-        try {
-            return assignments.values().parallelStream()
-                    .filter(filter::test)
-                    .collect(Collectors.toList());
-        } finally {
-            lock.readLock().unlock();
-        }
+        return assignments.values().parallelStream()
+                .filter(filter::test)
+                .collect(Collectors.toList());
     }
 
     public List<RoleAssignment> findAllParallel(AssignmentFilter filter, Comparator<RoleAssignment> sorter) {
-        lock.readLock().lock();
-        try {
-            return assignments.values().parallelStream()
-                    .filter(filter::test)
-                    .sorted(sorter)
-                    .toList();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return assignments.values().parallelStream()
+                .filter(filter::test)
+                .sorted(sorter)
+                .toList();
     }
 }
